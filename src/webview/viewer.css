@@ -1,0 +1,27 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+#app {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Hide left panel buttons: Plugin State (save), Help, Settings */
+.msp-left-panel-controls-buttons button[title="Plugin State"],
+.msp-left-panel-controls-buttons button[title="Help"],
+.msp-left-panel-controls-buttons button[title="Settings"] {
+  display: none !important;
+}
+

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <!-- Bonds -->
+  <line x1="8" y1="2.2" x2="13" y2="5.1" stroke="#5B8CC7" stroke-width="2" stroke-linecap="round"/>
+  <line x1="13" y1="5.1" x2="13" y2="10.9" stroke="#5B8CC7" stroke-width="2" stroke-linecap="round"/>
+  <line x1="13" y1="10.9" x2="8" y2="13.8" stroke="#5B8CC7" stroke-width="2" stroke-linecap="round"/>
+  <line x1="8" y1="13.8" x2="3" y2="10.9" stroke="#5B8CC7" stroke-width="2" stroke-linecap="round"/>
+  <line x1="3" y1="10.9" x2="3" y2="5.1" stroke="#5B8CC7" stroke-width="2" stroke-linecap="round"/>
+  <line x1="3" y1="5.1" x2="8" y2="2.2" stroke="#5B8CC7" stroke-width="2" stroke-linecap="round"/>
+  <!-- Atoms -->
+  <circle cx="8" cy="2.2" r="2.2" fill="#5BA4E6"/>
+  <circle cx="13" cy="5.1" r="2.2" fill="#F07088"/>
+  <circle cx="13" cy="10.9" r="2.2" fill="#FFD55A"/>
+  <circle cx="8" cy="13.8" r="2.2" fill="#5BA4E6"/>
+  <circle cx="3" cy="10.9" r="2.2" fill="#F07088"/>
+  <circle cx="3" cy="5.1" r="2.2" fill="#FFD55A"/>
+</svg>

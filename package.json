@@ -1,0 +1,150 @@
+{
+  "name": "molstar-lite",
+  "displayName": "Molstar Lite",
+  "description": "A lightweight Mol* 3D molecular structure viewer for VS Code",
+  "version": "1.0.0",
+  "publisher": "Passion4ever",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Passion4ever/vscode-molstar-lite"
+  },
+  "icon": "media/icon.png",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Visualization"
+  ],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "molViewer.preview",
+        "title": "Open Mol Viewer",
+        "category": "Mol Viewer",
+        "icon": {
+          "light": "media/preview-light.svg",
+          "dark": "media/preview-dark.svg"
+        }
+      },
+      {
+        "command": "molViewer.previewToSide",
+        "title": "Open Mol Viewer to the Side",
+        "category": "Mol Viewer",
+        "icon": {
+          "light": "media/preview-light.svg",
+          "dark": "media/preview-dark.svg"
+        }
+      },
+      {
+        "command": "molViewer.addToViewer",
+        "title": "Add to Mol Viewer",
+        "category": "Mol Viewer"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "when": "resourceLangId =~ /^(pdb|pdbqt|pqr|cif|gro|mol|mol2|sdf|xyz)$/",
+          "command": "molViewer.previewToSide",
+          "group": "navigation"
+        }
+      ],
+      "explorer/context": [
+        {
+          "when": "resourceLangId =~ /^(pdb|pdbqt|pqr|cif|gro|mol|mol2|sdf|xyz)$/",
+          "command": "molViewer.preview",
+          "group": "navigation"
+        },
+        {
+          "when": "resourceLangId =~ /^(pdb|pdbqt|pqr|cif|gro|mol|mol2|sdf|xyz)$/",
+          "command": "molViewer.previewToSide",
+          "group": "navigation"
+        },
+        {
+          "when": "resourceLangId =~ /^(pdb|pdbqt|pqr|cif|gro|mol|mol2|sdf|xyz)$/ && molViewer.hasActivePanel",
+          "command": "molViewer.addToViewer",
+          "group": "navigation"
+        }
+      ],
+      "editor/context": [
+        {
+          "when": "resourceLangId =~ /^(pdb|pdbqt|pqr|cif|gro|mol|mol2|sdf|xyz)$/",
+          "command": "molViewer.previewToSide",
+          "group": "navigation"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "molViewer.previewToSide",
+        "key": "ctrl+shift+m",
+        "mac": "cmd+shift+m",
+        "when": "resourceLangId =~ /^(pdb|pdbqt|pqr|cif|gro|mol|mol2|sdf|xyz)$/"
+      }
+    ],
+    "languages": [
+      {
+        "id": "pdb",
+        "extensions": [".pdb"],
+        "aliases": ["PDB"]
+      },
+      {
+        "id": "pdbqt",
+        "extensions": [".pdbqt"],
+        "aliases": ["PDBQT"]
+      },
+      {
+        "id": "pqr",
+        "extensions": [".pqr"],
+        "aliases": ["PQR"]
+      },
+      {
+        "id": "cif",
+        "extensions": [".cif", ".mmcif"],
+        "aliases": ["CIF", "mmCIF"]
+      },
+      {
+        "id": "gro",
+        "extensions": [".gro"],
+        "aliases": ["GRO", "GROMACS"]
+      },
+      {
+        "id": "mol",
+        "extensions": [".mol"],
+        "aliases": ["MOL"]
+      },
+      {
+        "id": "mol2",
+        "extensions": [".mol2"],
+        "aliases": ["MOL2", "Tripos MOL2"]
+      },
+      {
+        "id": "sdf",
+        "extensions": [".sdf"],
+        "aliases": ["SDF"]
+      },
+      {
+        "id": "xyz",
+        "extensions": [".xyz"],
+        "aliases": ["XYZ"]
+      }
+    ]
+  },
+  "scripts": {
+    "build": "node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "esbuild": "^0.20.0",
+    "typescript": "^5.3.0"
+  },
+  "dependencies": {
+    "molstar": "^5.7.0"
+  }
+}
