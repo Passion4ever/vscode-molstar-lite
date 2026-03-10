@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="media/icon.svg" width="128" height="128" alt="Molstar Lite">
+  <img src="media/icon.png" width="128" height="128" alt="Molstar Lite">
 </p>
 
 <h1 align="center">Molstar Lite</h1>
