@@ -5,7 +5,7 @@
 <h1 align="center">Molstar Lite</h1>
 
 <p align="center">
-  A lightweight <a href="https://molstar.org/">Mol*</a> 3D molecular structure viewer for VS Code.
+  <strong>Lite, powerful, and fast</strong> — a 3D molecular structure viewer for VS Code, powered by <a href="https://molstar.org/">Mol*</a>.
 </p>
 
 <p align="center">
@@ -16,18 +16,45 @@
 
 ---
 
-Preview molecular structures directly in VS Code with a single click — just like Markdown preview, but for molecules.
+Browse, compare, and explore molecular structures directly in VS Code. Open a single file for detailed analysis with full [Mol\*](https://molstar.org/) controls, or open an entire folder to browse dozens of structures in a grid view.
 
-## Features
+## ✨ Features
 
-- **One-Click Preview** — Click the molecule icon in the editor title bar to instantly visualize structures
-- **Side-by-Side View** — Preview opens beside your editor, keeping your code in view
-- **Multi-Molecule Overlay** — Add multiple structures to the same viewer for comparison
-- **Multiple Tabs** — Open several viewer panels simultaneously
-- **Streamlined UI** — Curated Mol\* interface with only essential panels and controls
-- **Keyboard Shortcut** — `Cmd+Shift+M` / `Ctrl+Shift+M` for quick preview
+### 🗂️ Grid View
 
-## Supported Formats
+Open multiple files or a folder to view structures as a grid of interactive cards.
+
+<!-- TODO: Add GIF showing grid view with multiple cards -->
+<!-- ![Grid View](media/screenshots/grid-view.gif) -->
+
+- 🖼️ **Thumbnail preview** — Lazy-rendered 3D thumbnails for each structure
+- 🖱️ **Click to activate** — Click a card to preview with an interactive 3D overlay; double-click or press `Enter` to open in full viewer
+- 🎨 **Toolbar controls** — Change color scheme, representation, rendering style, and grid size across all cards
+- 🔍 **Search, sort & filter** — Search by filename, sort by name, filter by format (with file counts)
+- ✅ **Selection mode** — Select cards with click, `Ctrl+Click`, or `Shift+Click` for range selection; delete with undo support (`Ctrl+Z`)
+- ⌨️ **Keyboard navigation** — Arrow keys to navigate, `Enter` for full viewer, `Escape` to go back
+
+### 🔬 Full Viewer
+
+Double-click any card to open the full Mol\* viewer with complete controls — sequence panel, component management, representation editor, and more. Each card remembers its own viewer state independently.
+
+<!-- TODO: Add GIF showing full viewer with Mol* controls -->
+<!-- ![Full Viewer](media/screenshots/full-viewer.gif) -->
+
+### 🌈 Syntax Highlighting
+
+Built-in syntax highlighting for molecular file formats with semantic coloring for residue types, element names, chain IDs, and more.
+
+<!-- TODO: Add screenshot of syntax highlighting -->
+<!-- ![Syntax Highlighting](media/screenshots/syntax-highlight.png) -->
+
+### 🚀 More
+
+- 👆 **One-click preview** — Click the molecule icon in the editor title bar to instantly visualize a structure
+- 📂 **Open files or folders** — Right-click in Explorer, use the Command Palette, or click the Open button in the viewer
+- 🌐 **Works with VS Code Remote** — Full support for SSH, WSL, and container environments
+
+## 📋 Supported Formats
 
 | Format | Extension | Description |
 |--------|-----------|-------------|
@@ -41,32 +68,38 @@ Preview molecular structures directly in VS Code with a single click — just li
 | SDF | `.sdf` | Structure-Data File |
 | XYZ | `.xyz` | XYZ chemical file |
 
-## Getting Started
+## 🏁 Getting Started
 
-1. Install the extension from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Passion4ever.molstar-lite)
-2. Open any supported molecular file (e.g. `.pdb`, `.cif`, `.mol2`)
-3. Click the **molecule icon** in the editor title bar — or press `Cmd+Shift+M`
+1. Install from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Passion4ever.molstar-lite)
+2. Open a molecular file and click the **molecule icon** in the editor title bar
+3. Or right-click a file/folder in the Explorer and select **Molstar Lite: Open**
+4. Or press `Cmd+Shift+P` / `Ctrl+Shift+P` and run **Molstar Lite: Open**
 
-### Overlay Multiple Structures
+## 💻 Commands
 
-1. Open a structure in the viewer
-2. Right-click another file in the Explorer
-3. Select **Add to Mol Viewer**
+| Command | Description |
+|---------|-------------|
+| `Molstar Lite: Open` | Open selected files/folders in the viewer |
+| `Molstar Lite: Open to the Side` | Open in a side panel |
 
-## Commands
+Commands are available via the Command Palette, Explorer right-click menu, editor right-click menu, and the editor title bar icon.
 
-| Command | Description | Shortcut |
-|---------|-------------|----------|
-| `Mol Viewer: Open Mol Viewer` | Open preview in current column | — |
-| `Mol Viewer: Open Mol Viewer to the Side` | Open preview to the side | `Cmd+Shift+M` |
-| `Mol Viewer: Add to Mol Viewer` | Overlay molecule on existing viewer | — |
+## ⌨️ Keyboard Shortcuts (in viewer)
 
-All commands are available via the Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`), right-click context menus in Explorer and Editor, and the editor title bar icon.
+| Key | Action |
+|-----|--------|
+| `Arrow keys` | Navigate between cards |
+| `Enter` | Open active card in full viewer |
+| `Escape` | Close full viewer / exit select mode / deactivate card |
+| `Ctrl+A` | Select all cards (in select mode) |
+| `Ctrl+Z` | Undo last delete |
+| `Ctrl+Click` | Toggle card selection |
+| `Shift+Click` | Range selection |
 
-## Acknowledgments
+## 🙏 Acknowledgments
 
 Powered by [Mol\*](https://github.com/molstar/molstar) — an open-source toolkit for molecular visualization (MIT License).
 
-## License
+## 📄 License
 
 [MIT](LICENSE)
