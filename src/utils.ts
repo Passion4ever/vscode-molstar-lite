@@ -1,5 +1,3 @@
-import path from 'path';
-
 export function getNonce(): string {
   let text = '';
   const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -9,7 +7,12 @@ export function getNonce(): string {
   return text;
 }
 
-const FORMAT_MAP: Record<string, string> = {
+export function getFileExtension(path: string): string {
+  const lastDot = path.lastIndexOf('.');
+  return lastDot >= 0 ? path.slice(lastDot).toLowerCase() : '';
+}
+
+export const FORMAT_MAP: Record<string, string> = {
   '.pdb': 'pdb',
   '.pdbqt': 'pdbqt',
   '.pqr': 'pqr',
@@ -21,8 +24,3 @@ const FORMAT_MAP: Record<string, string> = {
   '.sdf': 'sdf',
   '.xyz': 'xyz',
 };
-
-export function extToFormat(filePath: string): string | undefined {
-  const ext = path.extname(filePath).toLowerCase();
-  return FORMAT_MAP[ext];
-}

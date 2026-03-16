@@ -1,68 +1,106 @@
 import * as vscode from 'vscode';
-import { MolViewerPanel } from './molViewerPanel';
-import { extToFormat } from './utils';
+import { GridViewerPanel } from './gridViewerPanel';
+import { FORMAT_MAP, getFileExtension } from './utils';
+import { registerSyntaxHighlight } from './syntaxHighlight';
 
 export function activate(context: vscode.ExtensionContext) {
+  registerSyntaxHighlight(context);
+
   context.subscriptions.push(
-    vscode.commands.registerCommand('molViewer.preview', (uri?: vscode.Uri) => {
-      openPreview(context, uri, vscode.ViewColumn.Active);
+    vscode.commands.registerCommand('molViewer.open', (uri?: vscode.Uri, allUris?: vscode.Uri[]) => {
+      openViewer(context, uri, allUris, vscode.ViewColumn.Active);
     }),
 
-    vscode.commands.registerCommand('molViewer.previewToSide', (uri?: vscode.Uri) => {
-      openPreview(context, uri, vscode.ViewColumn.Beside);
-    }),
-
-    vscode.commands.registerCommand('molViewer.addToViewer', (uri?: vscode.Uri) => {
-      addToViewer(context, uri);
+    vscode.commands.registerCommand('molViewer.openToSide', (uri?: vscode.Uri, allUris?: vscode.Uri[]) => {
+      openViewer(context, uri, allUris, vscode.ViewColumn.Beside);
     })
   );
 }
 
-async function openPreview(context: vscode.ExtensionContext, uri: vscode.Uri | undefined, column: vscode.ViewColumn) {
-  const fileUri = uri || vscode.window.activeTextEditor?.document.uri;
-  if (!fileUri) {
-    vscode.window.showErrorMessage('No file selected.');
+async function openViewer(
+  context: vscode.ExtensionContext,
+  uri: vscode.Uri | undefined,
+  allUris: vscode.Uri[] | undefined,
+  column: vscode.ViewColumn
+) {
+  const supportedExts = Object.keys(FORMAT_MAP);
+
+  // Determine input URIs
+  let inputUris: vscode.Uri[];
+  if (allUris && allUris.length > 1) {
+    inputUris = allUris;
+  } else if (uri) {
+    inputUris = [uri];
+  } else if (vscode.window.activeTextEditor) {
+    inputUris = [vscode.window.activeTextEditor.document.uri];
+  } else {
+    // No file context — open empty viewer, user can add files via Open button
+    GridViewerPanel.create(context.extensionUri, [], column);
     return;
   }
 
-  const format = extToFormat(fileUri.fsPath);
-  if (!format) {
-    vscode.window.showErrorMessage('Unsupported file format.');
+  // Collect molecular files from URIs (files + folders)
+  const molFiles: { uri: vscode.Uri; ext: string }[] = [];
+
+  for (const u of inputUris) {
+    let stat: vscode.FileStat;
+    try {
+      stat = await vscode.workspace.fs.stat(u);
+    } catch {
+      continue;
+    }
+
+    if (stat.type === vscode.FileType.Directory) {
+      // Scan one level for supported files
+      const entries = await vscode.workspace.fs.readDirectory(u);
+      for (const [name, type] of entries) {
+        if (type !== vscode.FileType.File) { continue; }
+        const ext = getFileExtension(name);
+        if (supportedExts.includes(ext)) {
+          molFiles.push({ uri: vscode.Uri.joinPath(u, name), ext });
+        }
+      }
+    } else {
+      // Single file — check extension
+      const ext = getFileExtension(u.fsPath);
+      if (supportedExts.includes(ext)) {
+        molFiles.push({ uri: u, ext });
+      }
+    }
+  }
+
+  if (molFiles.length === 0) {
+    vscode.window.showInformationMessage('No supported molecular files found.');
     return;
   }
 
-  const data = await readFileContent(fileUri);
-  if (!data) { return; }
+  // Read file contents (with progress indicator for multiple files)
+  const files: { data: string; format: string; fileName: string; uri: string }[] = [];
 
-  const panel = MolViewerPanel.createOrShow(context.extensionUri, column);
-  const fileName = vscode.workspace.asRelativePath(fileUri);
-  panel.addMolecule(data, format, fileName);
-}
+  await vscode.window.withProgress(
+    { location: vscode.ProgressLocation.Notification, title: 'Loading molecular files...' },
+    async () => {
+      const results = await Promise.all(
+        molFiles.map(async (f) => {
+          const data = await readFileContent(f.uri);
+          if (!data) { return null; }
+          const format = FORMAT_MAP[f.ext];
+          const fileName = f.uri.path.split('/').pop() || '';
+          return { data, format, fileName, uri: f.uri.toString() };
+        })
+      );
+      for (const r of results) {
+        if (r) { files.push(r); }
+      }
+    }
+  );
 
-async function addToViewer(context: vscode.ExtensionContext, uri?: vscode.Uri) {
-  const fileUri = uri || vscode.window.activeTextEditor?.document.uri;
-  if (!fileUri) {
-    vscode.window.showErrorMessage('No file selected.');
+  if (files.length === 0) {
+    vscode.window.showErrorMessage('Failed to read molecular files.');
     return;
   }
 
-  const format = extToFormat(fileUri.fsPath);
-  if (!format) {
-    vscode.window.showErrorMessage('Unsupported file format.');
-    return;
-  }
-
-  const panel = MolViewerPanel.getActivePanel();
-  if (!panel) {
-    vscode.window.showErrorMessage('No active Mol Viewer panel. Open a preview first.');
-    return;
-  }
-
-  const data = await readFileContent(fileUri);
-  if (!data) { return; }
-
-  const fileName = vscode.workspace.asRelativePath(fileUri);
-  panel.addMolecule(data, format, fileName);
+  GridViewerPanel.create(context.extensionUri, files, column);
 }
 
 async function readFileContent(uri: vscode.Uri): Promise<string | undefined> {

@@ -2,7 +2,7 @@
   "name": "molstar-lite",
   "displayName": "Molstar Lite",
   "description": "A lightweight Mol* 3D molecular structure viewer for VS Code",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "publisher": "Passion4ever",
   "license": "MIT",
   "repository": {
@@ -14,77 +14,73 @@
     "vscode": "^1.85.0"
   },
   "categories": [
-    "Visualization"
+    "Visualization",
+    "Programming Languages"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onLanguage:pdb",
+    "onLanguage:pdbqt",
+    "onLanguage:pqr",
+    "onLanguage:cif",
+    "onLanguage:sdf",
+    "onLanguage:mol",
+    "onLanguage:mol2",
+    "onLanguage:xyz",
+    "onLanguage:gro"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "molViewer.preview",
-        "title": "Open Mol Viewer",
-        "category": "Mol Viewer",
+        "command": "molViewer.open",
+        "title": "Molstar Lite: Open",
         "icon": {
           "light": "media/preview-light.svg",
           "dark": "media/preview-dark.svg"
         }
       },
       {
-        "command": "molViewer.previewToSide",
-        "title": "Open Mol Viewer to the Side",
-        "category": "Mol Viewer",
+        "command": "molViewer.openToSide",
+        "title": "Molstar Lite: Open to the Side",
         "icon": {
           "light": "media/preview-light.svg",
           "dark": "media/preview-dark.svg"
         }
-      },
-      {
-        "command": "molViewer.addToViewer",
-        "title": "Add to Mol Viewer",
-        "category": "Mol Viewer"
       }
     ],
     "menus": {
       "editor/title": [
         {
           "when": "resourceLangId =~ /^(pdb|pdbqt|pqr|cif|gro|mol|mol2|sdf|xyz)$/",
-          "command": "molViewer.previewToSide",
+          "command": "molViewer.openToSide",
           "group": "navigation"
         }
       ],
       "explorer/context": [
         {
-          "when": "resourceLangId =~ /^(pdb|pdbqt|pqr|cif|gro|mol|mol2|sdf|xyz)$/",
-          "command": "molViewer.preview",
+          "when": "resourceLangId =~ /^(pdb|pdbqt|pqr|cif|gro|mol|mol2|sdf|xyz)$/ && !listMultiSelection",
+          "command": "molViewer.open",
           "group": "navigation"
         },
         {
-          "when": "resourceLangId =~ /^(pdb|pdbqt|pqr|cif|gro|mol|mol2|sdf|xyz)$/",
-          "command": "molViewer.previewToSide",
+          "when": "listMultiSelection",
+          "command": "molViewer.open",
           "group": "navigation"
         },
         {
-          "when": "resourceLangId =~ /^(pdb|pdbqt|pqr|cif|gro|mol|mol2|sdf|xyz)$/ && molViewer.hasActivePanel",
-          "command": "molViewer.addToViewer",
+          "when": "explorerResourceIsFolder && !listMultiSelection",
+          "command": "molViewer.open",
           "group": "navigation"
         }
       ],
       "editor/context": [
         {
           "when": "resourceLangId =~ /^(pdb|pdbqt|pqr|cif|gro|mol|mol2|sdf|xyz)$/",
-          "command": "molViewer.previewToSide",
+          "command": "molViewer.openToSide",
           "group": "navigation"
         }
       ]
     },
-    "keybindings": [
-      {
-        "command": "molViewer.previewToSide",
-        "key": "ctrl+shift+m",
-        "mac": "cmd+shift+m",
-        "when": "resourceLangId =~ /^(pdb|pdbqt|pqr|cif|gro|mol|mol2|sdf|xyz)$/"
-      }
-    ],
     "languages": [
       {
         "id": "pdb",
@@ -131,7 +127,67 @@
         "extensions": [".xyz"],
         "aliases": ["XYZ"]
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Molstar Lite",
+      "properties": {
+        "molstarLite.highlight.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable syntax highlighting for molecular files"
+        },
+        "molstarLite.highlight.residueColors": {
+          "type": "object",
+          "default": {
+            "hydrophobic": "#C8AE81",
+            "polar": "#7EE787",
+            "positive": "#79C0FF",
+            "negative": "#FF7B72",
+            "special": "#D2A8FF",
+            "water": "#56D4DD",
+            "dna": "#FFA657",
+            "rna": "#FFAB70",
+            "ligand": "#8B949E"
+          },
+          "description": "Colors for amino acid residue groups",
+          "properties": {
+            "hydrophobic": { "type": "string", "description": "ALA, VAL, LEU, ILE, MET, PHE, TRP, PRO" },
+            "polar": { "type": "string", "description": "SER, THR, ASN, GLN, TYR, CYS" },
+            "positive": { "type": "string", "description": "ARG, LYS, HIS" },
+            "negative": { "type": "string", "description": "ASP, GLU" },
+            "special": { "type": "string", "description": "GLY" },
+            "water": { "type": "string", "description": "HOH, WAT, H2O" },
+            "dna": { "type": "string", "description": "DA, DT, DG, DC" },
+            "rna": { "type": "string", "description": "A, U, G, C" },
+            "ligand": { "type": "string", "description": "Other residues / ligands" }
+          }
+        },
+        "molstarLite.highlight.elementColors": {
+          "type": "object",
+          "default": {
+            "carbon": "#909090",
+            "nitrogen": "#6CB6FF",
+            "oxygen": "#FF7B72",
+            "sulfur": "#E3B341",
+            "hydrogen": "#C9D1D9",
+            "phosphorus": "#FFA657",
+            "metal": "#D2A8FF",
+            "other": "#A0A0A0"
+          },
+          "description": "CPK colors for element symbols",
+          "properties": {
+            "carbon": { "type": "string", "description": "C" },
+            "nitrogen": { "type": "string", "description": "N" },
+            "oxygen": { "type": "string", "description": "O" },
+            "sulfur": { "type": "string", "description": "S" },
+            "hydrogen": { "type": "string", "description": "H" },
+            "phosphorus": { "type": "string", "description": "P" },
+            "metal": { "type": "string", "description": "FE, ZN, MG, CA, etc." },
+            "other": { "type": "string", "description": "Other elements" }
+          }
+        }
+      }
+    }
   },
   "scripts": {
     "build": "node esbuild.js",

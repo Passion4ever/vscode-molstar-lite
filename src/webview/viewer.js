@@ -1,104 +1,159 @@
-(function () {
-  var viewer = null;
-  var vscode = acquireVsCodeApi();
+import { state, cardId, MOLSTAR_CONFIG, FULL_VIEWER_CONFIG } from './state.js';
+import { hideAxes, applyCurrentColorTheme, applyCanvasStyle, applyRepresentationTypeTo, hideBuiltinSections } from './molstar-utils.js';
+import { revokeScreenshot, updateCardImage } from './utils.js';
 
-  function initViewer() {
-    molstar.Viewer.create('app', {
-      layoutIsExpanded: false,
-      layoutShowControls: true,
-      layoutShowRemoteState: false,
-      layoutShowSequence: true,
-      layoutShowLog: false,
-      layoutShowLeftPanel: true,
-      collapseLeftPanel: true,
-      collapseRightPanel: false,
+// ────────────────── Interactive viewer (card overlay) ──────────────────
 
-      viewportShowExpand: false,
-      viewportShowToggleFullscreen: false,
-      viewportShowControls: true,
-      viewportShowSettings: false,
-      viewportShowSelectionMode: true,
-      viewportShowAnimation: false,
-
-      // Disable extensions we don't need
-      volumeStreamingDisabled: true,
-      disabledExtensions: [
-        'assembly-symmetry',
-        'model-export',
-        'mp4-export',
-        'geo-export',
-        'zenodo-import',
-        'pdbe-structure-quality-report',
-        'rcsb-validation-report',
-        'anvil-membrane-orientation',
-        'g3d',
-        'sb-ncbr-partial-charges',
-        'tunnels',
-        'dnatco-ntcs',
-      ],
-    }).then(function (v) {
-      viewer = v;
-      hideBuiltinSections();
-      vscode.postMessage({ type: 'ready' });
-    });
+export function activateCard(index) {
+  if (state.activeCardIndex >= 0) {
+    deactivateCard();
   }
 
-  // Hide built-in UI elements that can't be disabled via config
-  var HIDDEN_EXACT = ['Measurements'];  // exact match, hide whole section
-  var HIDDEN_PREFIX = ['Unit Cell'];     // startsWith match, hide parent only
+  state.activeCardIndex = index;
+  const card = document.getElementById(cardId(index));
+  if (!card) return;
+  card.classList.add('active');
 
-  function hideBuiltinSections() {
-    var observer = new MutationObserver(function () {
-      var buttons = document.querySelectorAll('button');
-      buttons.forEach(function (btn) {
-        if (btn.offsetParent === null) { return; }
+  positionViewerOnCard(index);
+  state.viewerOverlay.style.display = 'block';
 
-        var text = btn.textContent.replace(/\s+/g, ' ').trim();
-
-        // Exact match: hide whole section
-        if (HIDDEN_EXACT.indexOf(text) !== -1) {
-          var el = btn;
-          while (el.parentElement) {
-            var next = el.parentElement;
-            if (next.classList.contains('msp-scrollable-container')
-              || next.classList.contains('msp-layout-right')
-              || next.id === 'app') {
-              break;
-            }
-            el = next;
-          }
-          el.style.display = 'none';
-          return;
-        }
-
-        // Prefix match: hide parent only (sub-items like Unit Cell)
-        for (var i = 0; i < HIDDEN_PREFIX.length; i++) {
-          if (text.lastIndexOf(HIDDEN_PREFIX[i], 0) === 0) {
-            var parent = btn.parentElement;
-            if (parent) { parent.style.display = 'none'; }
-            return;
-          }
-        }
-      });
+  if (!state.viewer) {
+    molstar.Viewer.create('active-viewer', MOLSTAR_CONFIG).then(function (v) {
+      state.viewer = v;
+      hideAxes(v);
+      if (state.activeCardIndex === index) {
+        loadStructureInViewer(index);
+      }
     });
-    observer.observe(document.getElementById('app'), {
-      childList: true, subtree: true,
-    });
+  } else {
+    loadStructureInViewer(index);
+  }
+}
+
+export function deactivateCard() {
+  if (state.activeCardIndex < 0) return;
+
+  const canvas = state.viewerOverlay.querySelector('canvas');
+  if (canvas) {
+    try {
+      const idx = state.activeCardIndex;
+      canvas.toBlob(function (blob) {
+        if (!blob) return;
+        revokeScreenshot(idx);
+        const url = URL.createObjectURL(blob);
+        state.screenshots[idx] = url;
+        updateCardImage(idx, url);
+      }, 'image/png');
+    } catch (e) { /* ignore */ }
   }
 
-  function addMolecule(data, format, fileName) {
-    if (!viewer) { return; }
-    viewer.loadStructureFromData(data, format, false, {
-      dataLabel: fileName,
-    });
-  }
+  const card = document.getElementById(cardId(state.activeCardIndex));
+  if (card) card.classList.remove('active');
 
-  window.addEventListener('message', function (event) {
-    var message = event.data;
-    if (message.type === 'addMolecule') {
-      addMolecule(message.data, message.format, message.fileName);
+  state.viewerOverlay.style.display = 'none';
+  state.activeCardIndex = -1;
+}
+
+export function positionViewerOnCard(index) {
+  const card = document.getElementById(cardId(index));
+  if (!card) return;
+  const imgArea = card.querySelector('.card-img-area');
+  if (!imgArea) return;
+
+  const wrapperRect = state.gridWrapper.getBoundingClientRect();
+  const cardRect = card.getBoundingClientRect();
+  state.viewerOverlay.style.left = (cardRect.left - wrapperRect.left + state.gridWrapper.scrollLeft) + 'px';
+  state.viewerOverlay.style.top = (cardRect.top - wrapperRect.top + state.gridWrapper.scrollTop) + 'px';
+  state.viewerOverlay.style.width = cardRect.width + 'px';
+  state.viewerOverlay.style.height = imgArea.getBoundingClientRect().height + 'px';
+
+  if (state.viewer) {
+    setTimeout(function () {
+      try { state.viewer.handleResize(); } catch (e) { /* ignore */ }
+    }, 50);
+  }
+}
+
+export function loadStructureInViewer(index) {
+  if (!state.viewer) return;
+  const file = state.files[index];
+  if (!file) return;
+
+  applyCanvasStyle(state.viewer);
+
+  state.viewer.plugin.clear().then(function () {
+    return state.viewer.loadStructureFromData(file.data, file.format, false, {
+      dataLabel: file.fileName,
+    });
+  }).then(function () {
+    if (state.settings.displayMode !== 'default') {
+      return applyRepresentationTypeTo(state.viewer, state.settings.displayMode);
     }
+  }).then(function () {
+    applyCurrentColorTheme(state.viewer);
+  }).catch(function (err) {
+    console.warn('Failed to load structure:', err);
   });
+}
 
-  initViewer();
-})();
+// ────────────────── Full viewer (in-panel) ──────────────────
+
+export function openFullViewer(index) {
+  const file = state.files[index];
+  if (!file) return;
+  state.fullViewerIndex = index;
+
+  state.fullViewerOverlay.style.display = 'flex';
+  document.getElementById('grid-toolbar').style.display = 'none';
+  state.gridWrapper.style.display = 'none';
+
+  const title = document.getElementById('full-viewer-title');
+  if (title) title.textContent = file.fileName;
+
+  const saved = state.fullViewerSnapshots[index];
+
+  if (!state.fullViewer) {
+    molstar.Viewer.create('full-viewer', FULL_VIEWER_CONFIG).then(function (v) {
+      state.fullViewer = v;
+      state.fullViewerSectionObserver = hideBuiltinSections(document.getElementById('full-viewer'));
+      if (saved) {
+        state.fullViewer.plugin.state.setSnapshot(saved);
+      } else {
+        loadInFullViewer(file);
+      }
+    });
+  } else if (saved) {
+    state.fullViewer.plugin.state.setSnapshot(saved);
+  } else {
+    loadInFullViewer(file);
+  }
+}
+
+function loadInFullViewer(file) {
+  state.fullViewer.plugin.clear().then(function () {
+    return state.fullViewer.loadStructureFromData(file.data, file.format, false, {
+      dataLabel: file.fileName,
+    });
+  }).catch(function (err) {
+    console.warn('Failed to load in full viewer:', err);
+  });
+}
+
+export function closeFullViewer() {
+  if (state.fullViewer && state.fullViewerIndex >= 0) {
+    try {
+      state.fullViewerSnapshots[state.fullViewerIndex] = state.fullViewer.plugin.state.getSnapshot({
+        data: true,
+        camera: true,
+        canvas3d: true,
+        componentManager: true,
+        cameraTransition: 'instant',
+      });
+    } catch (e) { /* ignore */ }
+  }
+
+  state.fullViewerOverlay.style.display = 'none';
+  document.getElementById('grid-toolbar').style.display = '';
+  state.gridWrapper.style.display = '';
+  state.fullViewerIndex = -1;
+}

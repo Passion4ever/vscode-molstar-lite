@@ -1,0 +1,503 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: var(--vscode-font-family);
+  display: flex;
+  flex-direction: column;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* ── Toolbar ── */
+#grid-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px 0;
+  padding: 8px 8px;
+  background: var(--vscode-editor-background);
+  border-bottom: 1px solid var(--vscode-panel-border);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+#grid-toolbar button {
+  padding: 4px 10px;
+  border: 1px solid var(--vscode-button-border, rgba(255,255,255,0.2));
+  border-radius: 4px;
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+}
+#grid-toolbar button:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+#grid-toolbar button.active {
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border-color: var(--vscode-button-background);
+}
+
+#grid-toolbar label {
+  font-size: 12px;
+  color: var(--vscode-foreground);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+#grid-toolbar select {
+  padding: 3px 6px;
+  border: 1px solid var(--vscode-dropdown-border);
+  border-radius: 4px;
+  background: var(--vscode-dropdown-background);
+  color: var(--vscode-dropdown-foreground);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.search-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+#grid-search-input {
+  width: 100px;
+  padding: 3px 22px 3px 6px;
+  border: 1px solid var(--vscode-input-border);
+  border-radius: 4px;
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+}
+#grid-search-input:focus {
+  border-color: var(--vscode-focusBorder);
+}
+#grid-search-input::placeholder {
+  color: var(--vscode-input-placeholderForeground);
+}
+
+.search-clear {
+  position: absolute;
+  right: 4px;
+  cursor: pointer;
+  color: var(--vscode-input-foreground);
+  font-size: 14px;
+  line-height: 1;
+  opacity: 0.6;
+}
+.search-clear:hover {
+  opacity: 1;
+}
+
+#grid-toolbar select:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.file-count {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+  white-space: nowrap;
+}
+
+.tb-group {
+  display: flex;
+  align-items: center;
+  gap: 4px 8px;
+  padding: 0 8px;
+  flex-wrap: wrap;
+}
+
+/* Separator line between groups */
+.tb-group + .tb-group {
+  border-left: 1px solid var(--vscode-panel-border);
+}
+
+.tb-group.size-group {
+  gap: 2px;
+}
+
+/* ── Grid wrapper (scrollable) ── */
+#grid-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  position: relative;
+}
+
+/* ── Empty state ── */
+#empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.empty-title {
+  font-size: 14px;
+  color: var(--vscode-foreground);
+  font-weight: 500;
+}
+
+.empty-hint {
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+  line-height: 1.5;
+}
+
+/* ── Loading indicator ── */
+#loading-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 13px;
+}
+
+/* ── Grid container ── */
+.grid-container {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+
+.grid-container.size-small  { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+.grid-container.size-medium { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+.grid-container.size-large  { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+
+/* ── Grid cards ── */
+.grid-card {
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--vscode-editor-background);
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+
+.grid-card:hover {
+  border-color: var(--vscode-focusBorder);
+}
+
+.grid-card.active {
+  border-color: var(--vscode-focusBorder);
+  box-shadow: 0 0 0 2px var(--vscode-focusBorder), 0 0 16px rgba(0, 127, 212, 0.45);
+  transform: scale(1.03);
+  z-index: 2;
+}
+
+.card-img-area {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  background: #1a1a2e;
+  overflow: hidden;
+}
+
+.card-img-area img {
+  width: 100%;
+  height: 100%;
+  -webkit-user-drag: none;
+  user-drag: none;
+  pointer-events: none;
+  object-fit: contain;
+}
+
+/* Hover hint overlay — hidden on active cards */
+.card-hover-hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  line-height: 1.6;
+  background: rgba(0, 0, 0, 0.5);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+  z-index: 5;
+}
+.grid-card:not(.active):hover .card-hover-hint {
+  opacity: 1;
+}
+/* Hide hint in select mode */
+.grid-card.selectable .card-hover-hint {
+  display: none;
+}
+
+.grid-card .label {
+  padding: 4px 8px;
+  font-size: 11px;
+  color: var(--vscode-foreground);
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Loading placeholder */
+.card-img-area.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+}
+.card-img-area.loading::after {
+  content: 'Loading...';
+}
+
+.fail-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--vscode-errorForeground);
+  font-size: 12px;
+}
+
+/* ── Viewer overlay (interactive card) ── */
+#viewer-overlay {
+  position: absolute;
+  z-index: 50;
+  border-radius: 6px 6px 0 0;
+  overflow: hidden;
+}
+
+#viewer-overlay #active-viewer {
+  width: 100%;
+  height: 100%;
+}
+
+#expand-btn,
+#reset-btn {
+  position: absolute;
+  top: 6px;
+  z-index: 60;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 4px;
+  background: rgba(0,0,0,0.45);
+  color: #fff;
+  font-size: 14px;
+  line-height: 26px;
+  text-align: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#expand-btn { right: 6px; }
+#reset-btn  { right: 36px; }
+#viewer-overlay:hover #expand-btn,
+#viewer-overlay:hover #reset-btn {
+  opacity: 1;
+}
+#expand-btn:hover,
+#reset-btn:hover {
+  background: rgba(0,0,0,0.7);
+}
+
+/* Hide Mol* UI chrome inside grid viewer */
+#viewer-overlay .msp-layout-left,
+#viewer-overlay .msp-layout-right,
+#viewer-overlay .msp-layout-bottom,
+#viewer-overlay .msp-layout-top,
+#viewer-overlay .msp-viewport-controls {
+  display: none !important;
+}
+
+/* ── Offscreen thumbnail renderer (separate Mol* instance) ── */
+#thumb-renderer {
+  position: fixed;
+  left: -9999px;
+  top: -9999px;
+  width: 300px;
+  height: 300px;
+  overflow: hidden;
+}
+
+/* Hide Mol* UI chrome inside thumbnail renderer */
+#thumb-renderer .msp-layout-left,
+#thumb-renderer .msp-layout-right,
+#thumb-renderer .msp-layout-bottom,
+#thumb-renderer .msp-layout-top,
+#thumb-renderer .msp-viewport-controls {
+  display: none !important;
+}
+
+/* ── Full viewer overlay (in-panel fullscreen) ── */
+#full-viewer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  background: var(--vscode-editor-background);
+}
+
+#full-viewer-topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 12px;
+  background: var(--vscode-editor-background);
+  border-bottom: 1px solid var(--vscode-panel-border);
+  flex-shrink: 0;
+}
+
+#back-to-grid-btn {
+  padding: 4px 10px;
+  border: 1px solid var(--vscode-button-border, rgba(255,255,255,0.2));
+  border-radius: 4px;
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+}
+#back-to-grid-btn:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+#full-viewer-title {
+  font-size: 13px;
+  color: var(--vscode-foreground);
+  font-weight: 500;
+}
+
+#full-viewer {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Hide left panel buttons in full viewer to match standalone viewer */
+#full-viewer .msp-left-panel-controls-buttons button[title="Plugin State"],
+#full-viewer .msp-left-panel-controls-buttons button[title="Settings"],
+#full-viewer .msp-left-panel-controls-buttons button[title="Home"] {
+  display: none !important;
+}
+
+/* ── Selection mode ── */
+.grid-card.selectable {
+  cursor: default;
+  position: relative;
+}
+
+.grid-card.selectable::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--vscode-checkbox-border, rgba(255,255,255,0.4));
+  border-radius: 3px;
+  background: var(--vscode-checkbox-background, transparent);
+  z-index: 10;
+  pointer-events: none;
+}
+
+.grid-card.selectable.selected::before {
+  background: var(--vscode-checkbox-selectBackground, var(--vscode-button-background));
+  border-color: var(--vscode-checkbox-selectBorder, var(--vscode-button-background));
+}
+
+.grid-card.selectable.selected::after {
+  content: '\2713';
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 18px;
+  height: 18px;
+  line-height: 18px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--vscode-checkbox-selectForeground, #fff);
+  z-index: 11;
+  pointer-events: none;
+}
+
+/* ── Undo toast ── */
+#undo-toast {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--vscode-editorWidget-background, #252526);
+  border: 1px solid var(--vscode-editorWidget-border, #454545);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  z-index: 300;
+  font-size: 12px;
+  color: var(--vscode-foreground);
+}
+
+#undo-toast button {
+  padding: 3px 10px;
+  border: none;
+  border-radius: 3px;
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+}
+#undo-toast button:hover {
+  background: var(--vscode-button-hoverBackground);
+}
+
+.undo-dismiss {
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  opacity: 0.6;
+  color: var(--vscode-foreground);
+}
+.undo-dismiss:hover {
+  opacity: 1;
+}
+
+#delete-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+#delete-btn:disabled:hover {
+  background: var(--vscode-button-secondaryBackground);
+}

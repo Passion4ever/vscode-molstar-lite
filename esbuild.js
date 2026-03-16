@@ -23,7 +23,7 @@ for (const file of filesToCopy) {
 }
 
 /** @type {import('esbuild').BuildOptions} */
-const buildOptions = {
+const extensionBuildOptions = {
   entryPoints: ['src/extension.ts'],
   bundle: true,
   outfile: 'dist/extension.js',
@@ -35,13 +35,32 @@ const buildOptions = {
   minify: !watch,
 };
 
+/** @type {import('esbuild').BuildOptions} */
+const webviewBuildOptions = {
+  entryPoints: ['src/webview/main.js'],
+  bundle: true,
+  outfile: 'dist/grid.js',
+  format: 'iife',
+  platform: 'browser',
+  target: 'es2020',
+  sourcemap: true,
+  minify: !watch,
+};
+
 if (watch) {
-  esbuild.context(buildOptions).then(ctx => {
-    ctx.watch();
+  Promise.all([
+    esbuild.context(extensionBuildOptions),
+    esbuild.context(webviewBuildOptions),
+  ]).then(([extCtx, webCtx]) => {
+    extCtx.watch();
+    webCtx.watch();
     console.log('Watching for changes...');
   });
 } else {
-  esbuild.build(buildOptions).then(() => {
+  Promise.all([
+    esbuild.build(extensionBuildOptions),
+    esbuild.build(webviewBuildOptions),
+  ]).then(() => {
     console.log('Build complete.');
   });
 }
