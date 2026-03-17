@@ -5,6 +5,9 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write
+
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -19,6 +22,18 @@ jobs:
 
       - run: npm run build
 
+      # Publish to VS Code Marketplace
       - run: npx @vscode/vsce publish
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
+
+      # Package .vsix for GitHub Release
+      - run: npx @vscode/vsce package
+
+      # Create GitHub Release with .vsix attached
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          generate_release_notes: true
+          files: '*.vsix'

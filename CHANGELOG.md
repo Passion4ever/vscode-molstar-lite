@@ -4,6 +4,16 @@ All notable changes to **Molstar Lite** will be documented in this file.
 
 ---
 
+## [1.1.1] - 2026-03-17
+
+### Fixed
+- Fix syntax highlighting not activating until viewer is opened — restore explicit `onLanguage` activation events
+
+### Changed
+- Update extension description
+
+---
+
 ## [1.1.0] - 2026-03-17
 
 > A major update that transforms Molstar Lite from a simple viewer into a full-featured molecular workbench.
