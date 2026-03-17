@@ -1,4 +1,5 @@
 .vscode/**
+.github/**
 src/**
 !src/webview/**
 node_modules/**
@@ -6,3 +7,5 @@ tsconfig.json
 esbuild.js
 .gitignore
 *.map
+examples/**
+syntaxes/**
