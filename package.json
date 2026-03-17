@@ -17,17 +17,7 @@
     "Visualization",
     "Programming Languages"
   ],
-  "activationEvents": [
-    "onLanguage:pdb",
-    "onLanguage:pdbqt",
-    "onLanguage:pqr",
-    "onLanguage:cif",
-    "onLanguage:sdf",
-    "onLanguage:mol",
-    "onLanguage:mol2",
-    "onLanguage:xyz",
-    "onLanguage:gro"
-  ],
+  "activationEvents": [],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
@@ -126,6 +116,36 @@
         "id": "xyz",
         "extensions": [".xyz"],
         "aliases": ["XYZ"]
+      },
+      {
+        "id": "fasta",
+        "extensions": [".fasta", ".fa", ".fna", ".faa", ".ffn", ".fas"],
+        "aliases": ["FASTA"]
+      },
+      {
+        "id": "mdp",
+        "extensions": [".mdp"],
+        "aliases": ["MDP", "GROMACS Parameters"]
+      },
+      {
+        "id": "top",
+        "extensions": [".top"],
+        "aliases": ["TOP", "GROMACS Topology"]
+      },
+      {
+        "id": "itp",
+        "extensions": [".itp"],
+        "aliases": ["ITP", "GROMACS Include Topology"]
+      },
+      {
+        "id": "ndx",
+        "extensions": [".ndx"],
+        "aliases": ["NDX", "GROMACS Index"]
+      },
+      {
+        "id": "xvg",
+        "extensions": [".xvg"],
+        "aliases": ["XVG", "Grace Data"]
       }
     ],
     "configuration": {
@@ -169,7 +189,7 @@
             "nitrogen": "#6CB6FF",
             "oxygen": "#FF7B72",
             "sulfur": "#E3B341",
-            "hydrogen": "#C9D1D9",
+            "hydrogen": "#7A828E",
             "phosphorus": "#FFA657",
             "metal": "#D2A8FF",
             "other": "#A0A0A0"
