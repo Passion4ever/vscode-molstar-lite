@@ -24,7 +24,6 @@ Browse, compare, and explore molecular structures directly in VS Code. Open a si
 
 Open multiple files or a folder to view structures as a grid of interactive cards.
 
-<!-- TODO: Add GIF showing grid view with multiple cards -->
 <!-- ![Grid View](media/screenshots/grid-view.gif) -->
 
 - 🖼️ **Thumbnail preview** — Lazy-rendered 3D thumbnails for each structure
@@ -38,15 +37,20 @@ Open multiple files or a folder to view structures as a grid of interactive card
 
 Double-click any card to open the full Mol\* viewer with complete controls — sequence panel, component management, representation editor, and more. Each card remembers its own viewer state independently.
 
-<!-- TODO: Add GIF showing full viewer with Mol* controls -->
 <!-- ![Full Viewer](media/screenshots/full-viewer.gif) -->
 
 ### 🌈 Syntax Highlighting
 
-Built-in syntax highlighting for molecular file formats with semantic coloring for residue types, element names, chain IDs, and more.
+Built-in semantic syntax highlighting for molecular file formats. Opens automatically when you edit any supported file — no extra extension needed.
 
-<!-- TODO: Add screenshot of syntax highlighting -->
 <!-- ![Syntax Highlighting](media/screenshots/syntax-highlight.png) -->
+
+- 🧬 **Residue coloring** — Amino acids colored by biochemical property (hydrophobic, polar, positive, negative, special)
+- ⚛️ **Element coloring** — Atom symbols colored using CPK convention (C, N, O, S, H, P, metals)
+- 🏷️ **Structural records** — ATOM/HETATM, HELIX, SHEET, SSBOND, chain IDs, coordinates, B-factors
+- 🧪 **Nucleotide coloring** — DNA (A/T/G/C) and RNA (A/U/G/C) bases with distinct colors in FASTA files
+- 🔧 **GROMACS toolkit** — MDP parameters, topology sections, preprocessor directives, index groups, XVG data
+- ⚙️ **Fully configurable** — Customize all residue and element colors via `Settings > Molstar Lite`
 
 ### 🚀 More
 
@@ -56,24 +60,31 @@ Built-in syntax highlighting for molecular file formats with semantic coloring f
 
 ## 📋 Supported Formats
 
-| Format | Extension | Description |
-|--------|-----------|-------------|
-| PDB | `.pdb` | Protein Data Bank |
-| PDBQT | `.pdbqt` | AutoDock |
-| PQR | `.pqr` | PDB with charge & radius |
-| mmCIF | `.cif` `.mmcif` | Macromolecular CIF |
-| GRO | `.gro` | GROMACS |
-| MOL | `.mol` | MDL Molfile |
-| MOL2 | `.mol2` | Tripos Mol2 |
-| SDF | `.sdf` | Structure-Data File |
-| XYZ | `.xyz` | XYZ chemical file |
+| Format | Extension | Description | 3D Viewer | Syntax Highlighting |
+|--------|-----------|-------------|:---------:|:-------------------:|
+| PDB | `.pdb` | Protein Data Bank | ✓ | ✓ |
+| PDBQT | `.pdbqt` | AutoDock | ✓ | ✓ |
+| PQR | `.pqr` | PDB with charge & radius | ✓ | ✓ |
+| mmCIF | `.cif` `.mmcif` | Macromolecular CIF | ✓ | ✓ |
+| GRO | `.gro` | GROMACS coordinate | ✓ | ✓ |
+| MOL | `.mol` | MDL Molfile | ✓ | ✓ |
+| MOL2 | `.mol2` | Tripos Mol2 | ✓ | ✓ |
+| SDF | `.sdf` | Structure-Data File | ✓ | ✓ |
+| XYZ | `.xyz` | XYZ chemical file | ✓ | ✓ |
+| FASTA | `.fasta` `.fa` `.fna` `.faa` `.ffn` `.fas` | Sequence file (protein & nucleotide) | — | ✓ |
+| MDP | `.mdp` | GROMACS parameters | — | ✓ |
+| TOP | `.top` | GROMACS topology | — | ✓ |
+| ITP | `.itp` | GROMACS include topology | — | ✓ |
+| NDX | `.ndx` | GROMACS index | — | ✓ |
+| XVG | `.xvg` | Grace/GROMACS data | — | ✓ |
 
 ## 🏁 Getting Started
 
 1. Install from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Passion4ever.molstar-lite)
 2. Open a molecular file and click the **molecule icon** in the editor title bar
 3. Or right-click a file/folder in the Explorer and select **Molstar Lite: Open**
-4. Or press `Cmd+Shift+P` / `Ctrl+Shift+P` and run **Molstar Lite: Open**
+4. Or select multiple files in the Explorer, right-click and open them together in grid view
+5. Or press `Cmd+Shift+P` / `Ctrl+Shift+P` and run **Molstar Lite: Open**
 
 ## 💻 Commands
 
@@ -83,6 +94,18 @@ Built-in syntax highlighting for molecular file formats with semantic coloring f
 | `Molstar Lite: Open to the Side` | Open in a side panel |
 
 Commands are available via the Command Palette, Explorer right-click menu, editor right-click menu, and the editor title bar icon.
+
+## ⚙️ Settings
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `molstarLite.highlight.enabled` | `true` | Enable/disable syntax highlighting |
+| `molstarLite.highlight.residueColors` | *(see below)* | Colors for amino acid groups |
+| `molstarLite.highlight.elementColors` | *(see below)* | CPK colors for elements |
+
+**Residue color groups:** hydrophobic, polar, positive, negative, special, water, dna, rna, ligand
+
+**Element color groups:** carbon, nitrogen, oxygen, sulfur, hydrogen, phosphorus, metal, other
 
 ## ⌨️ Keyboard Shortcuts (in viewer)
 
