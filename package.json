@@ -1,8 +1,8 @@
 {
   "name": "molstar-lite",
   "displayName": "Molstar Lite",
-  "description": "A lightweight Mol* 3D molecular structure viewer for VS Code",
-  "version": "1.1.0",
+  "description": "Lightweight molecular toolkit for structural biology in VS Code",
+  "version": "1.1.1",
   "publisher": "Passion4ever",
   "license": "MIT",
   "repository": {
@@ -17,7 +17,23 @@
     "Visualization",
     "Programming Languages"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onLanguage:pdb",
+    "onLanguage:pdbqt",
+    "onLanguage:pqr",
+    "onLanguage:cif",
+    "onLanguage:sdf",
+    "onLanguage:mol",
+    "onLanguage:mol2",
+    "onLanguage:xyz",
+    "onLanguage:gro",
+    "onLanguage:fasta",
+    "onLanguage:mdp",
+    "onLanguage:top",
+    "onLanguage:itp",
+    "onLanguage:ndx",
+    "onLanguage:xvg"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
