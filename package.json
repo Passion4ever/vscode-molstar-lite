@@ -2,7 +2,7 @@
   "name": "molstar-lite",
   "displayName": "Molstar Lite",
   "description": "Lightweight molecular structure toolkit for VS Code — 3D viewer, grid browser, and syntax highlighting",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "publisher": "Passion4ever",
   "license": "MIT",
   "pricing": "Free",
