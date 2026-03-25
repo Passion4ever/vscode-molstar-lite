@@ -1,10 +1,11 @@
 {
   "name": "molstar-lite",
   "displayName": "Molstar Lite",
-  "description": "Lightweight molecular toolkit for structural biology in VS Code",
+  "description": "Lightweight molecular structure toolkit for VS Code — 3D viewer, grid browser, and syntax highlighting",
   "version": "1.1.1",
   "publisher": "Passion4ever",
   "license": "MIT",
+  "pricing": "Free",
   "repository": {
     "type": "git",
     "url": "https://github.com/Passion4ever/vscode-molstar-lite"
@@ -52,6 +53,10 @@
           "light": "media/preview-light.svg",
           "dark": "media/preview-dark.svg"
         }
+      },
+      {
+        "command": "molViewer.openRecursive",
+        "title": "Molstar Lite: Open Folder Recursively"
       }
     ],
     "menus": {
@@ -76,6 +81,11 @@
         {
           "when": "explorerResourceIsFolder && !listMultiSelection",
           "command": "molViewer.open",
+          "group": "navigation"
+        },
+        {
+          "when": "explorerResourceIsFolder && !listMultiSelection",
+          "command": "molViewer.openRecursive",
           "group": "navigation"
         }
       ],
