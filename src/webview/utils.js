@@ -56,10 +56,16 @@ export function blankPixel() {
 export function waitForRender() {
   return new Promise(function (resolve) {
     const isBusy = state.thumbViewer.plugin.behaviors.state.isBusy;
+    let settled = false;
 
     function onReady() {
-      requestAnimationFrame(function () { setTimeout(resolve, 50); });
+      if (settled) return;
+      settled = true;
+      requestAnimationFrame(function () { setTimeout(resolve, 16); });
     }
+
+    // Timeout to prevent a bad file from stalling the entire queue
+    setTimeout(onReady, 5000);
 
     if (!isBusy.value) {
       onReady();

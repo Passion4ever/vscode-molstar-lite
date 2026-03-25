@@ -3,10 +3,11 @@ import { revokeScreenshot, updateCardImage } from './utils.js';
 import { updateFileCount, populateFormatFilter } from './toolbar.js';
 
 export function createCards(fileList, callbacks) {
+  const frag = document.createDocumentFragment();
   fileList.forEach(function (file, index) {
-    const card = createSingleCard(file, index, callbacks);
-    state.gridContainer.appendChild(card);
+    frag.appendChild(createSingleCard(file, index, callbacks));
   });
+  state.gridContainer.appendChild(frag);
 }
 
 export function createSingleCard(file, index, callbacks) {
@@ -105,10 +106,11 @@ export function createSingleCard(file, index, callbacks) {
 }
 
 export function createCardsFromIndex(startIndex, newFiles, callbacks) {
+  const frag = document.createDocumentFragment();
   newFiles.forEach(function (file, i) {
-    const card = createSingleCard(file, startIndex + i, callbacks);
-    state.gridContainer.appendChild(card);
+    frag.appendChild(createSingleCard(file, startIndex + i, callbacks));
   });
+  state.gridContainer.appendChild(frag);
 }
 
 export function renderNewThumbnails(startIndex) {
