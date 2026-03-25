@@ -1,6 +1,7 @@
 import { state, cardId, MOLSTAR_CONFIG, FULL_VIEWER_CONFIG } from './state.js';
-import { hideAxes, applyCurrentColorTheme, applyCanvasStyle, applyRepresentationTypeTo, hideBuiltinSections } from './molstar-utils.js';
-import { revokeScreenshot, updateCardImage } from './utils.js';
+import { hideAxes, applyCurrentColorTheme, applyCanvasStyle, applyRepresentationTypeTo } from './molstar-utils.js';
+import { takeScreenshotFrom } from './utils.js';
+import { requestFileData } from './data-loader.js';
 
 // ────────────────── Interactive viewer (card overlay) ──────────────────
 
@@ -33,19 +34,7 @@ export function activateCard(index) {
 export function deactivateCard() {
   if (state.activeCardIndex < 0) return;
 
-  const canvas = state.viewerOverlay.querySelector('canvas');
-  if (canvas) {
-    try {
-      const idx = state.activeCardIndex;
-      canvas.toBlob(function (blob) {
-        if (!blob) return;
-        revokeScreenshot(idx);
-        const url = URL.createObjectURL(blob);
-        state.screenshots[idx] = url;
-        updateCardImage(idx, url);
-      }, 'image/png');
-    } catch (e) { /* ignore */ }
-  }
+  takeScreenshotFrom(state.viewerOverlay, state.activeCardIndex);
 
   const card = document.getElementById(cardId(state.activeCardIndex));
   if (card) card.classList.remove('active');
@@ -81,18 +70,24 @@ export function loadStructureInViewer(index) {
 
   applyCanvasStyle(state.viewer);
 
-  state.viewer.plugin.clear().then(function () {
-    return state.viewer.loadStructureFromData(file.data, file.format, false, {
-      dataLabel: file.fileName,
+  requestFileData(index).then(function (data) {
+    if (!data || state.activeCardIndex !== index) return;
+    state.viewer.plugin.clear().then(function () {
+      if (state.activeCardIndex !== index) return;
+      return state.viewer.loadStructureFromData(file.data, file.format, false, {
+        dataLabel: file.fileName,
+      });
+    }).then(function () {
+      if (state.activeCardIndex !== index) return;
+      if (state.settings.displayMode !== 'default') {
+        return applyRepresentationTypeTo(state.viewer, state.settings.displayMode);
+      }
+    }).then(function () {
+      if (state.activeCardIndex !== index) return;
+      applyCurrentColorTheme(state.viewer);
+    }).catch(function (err) {
+      console.warn('Failed to load structure:', err);
     });
-  }).then(function () {
-    if (state.settings.displayMode !== 'default') {
-      return applyRepresentationTypeTo(state.viewer, state.settings.displayMode);
-    }
-  }).then(function () {
-    applyCurrentColorTheme(state.viewer);
-  }).catch(function (err) {
-    console.warn('Failed to load structure:', err);
   });
 }
 
@@ -115,27 +110,32 @@ export function openFullViewer(index) {
   if (!state.fullViewer) {
     molstar.Viewer.create('full-viewer', FULL_VIEWER_CONFIG).then(function (v) {
       state.fullViewer = v;
-      state.fullViewerSectionObserver = hideBuiltinSections(document.getElementById('full-viewer'));
       if (saved) {
         state.fullViewer.plugin.state.setSnapshot(saved);
       } else {
-        loadInFullViewer(file);
+        loadInFullViewer(index);
       }
     });
   } else if (saved) {
     state.fullViewer.plugin.state.setSnapshot(saved);
   } else {
-    loadInFullViewer(file);
+    loadInFullViewer(index);
   }
 }
 
-function loadInFullViewer(file) {
-  state.fullViewer.plugin.clear().then(function () {
-    return state.fullViewer.loadStructureFromData(file.data, file.format, false, {
-      dataLabel: file.fileName,
+function loadInFullViewer(index) {
+  const file = state.files[index];
+  if (!file) return;
+  requestFileData(index).then(function (data) {
+    if (!data || state.fullViewerIndex !== index) return;
+    state.fullViewer.plugin.clear().then(function () {
+      if (state.fullViewerIndex !== index) return;
+      return state.fullViewer.loadStructureFromData(file.data, file.format, false, {
+        dataLabel: file.fileName,
+      });
+    }).catch(function (err) {
+      console.warn('Failed to load in full viewer:', err);
     });
-  }).catch(function (err) {
-    console.warn('Failed to load in full viewer:', err);
   });
 }
 

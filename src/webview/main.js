@@ -4,6 +4,7 @@ import { createToolbar, updateFileCount, populateFormatFilter, applySortAndFilte
 import { createCards, createCardsFromIndex, renderNewThumbnails, toggleSelectMode, deleteSelectedCards, undoDelete, updateDeleteButton } from './cards.js';
 import { initThumbViewer, reRenderAllThumbnails, processReRenderQueue } from './thumbnails.js';
 import { activateCard, deactivateCard, positionViewerOnCard, loadStructureInViewer, openFullViewer, closeFullViewer } from './viewer.js';
+import { handleFileData } from './data-loader.js';
 
 // ────────────────── Callback objects ──────────────────
 
@@ -20,6 +21,13 @@ const cardCallbacks = {
   },
 };
 
+function reloadAndReRender() {
+  if (state.activeCardIndex >= 0 && state.viewer) {
+    loadStructureInViewer(state.activeCardIndex);
+  }
+  reRenderAllThumbnails();
+}
+
 const toolbarCallbacks = {
   onColorChange: function () {
     if (state.activeCardIndex >= 0 && state.viewer) {
@@ -27,18 +35,8 @@ const toolbarCallbacks = {
     }
     reRenderAllThumbnails();
   },
-  onReprChange: function () {
-    if (state.activeCardIndex >= 0 && state.viewer) {
-      loadStructureInViewer(state.activeCardIndex);
-    }
-    reRenderAllThumbnails();
-  },
-  onStyleChange: function () {
-    if (state.activeCardIndex >= 0 && state.viewer) {
-      loadStructureInViewer(state.activeCardIndex);
-    }
-    reRenderAllThumbnails();
-  },
+  onReprChange: reloadAndReRender,
+  onStyleChange: reloadAndReRender,
   onGridSizeChange: function () {
     if (state.activeCardIndex >= 0) {
       requestAnimationFrame(function () {
@@ -418,10 +416,15 @@ window.addEventListener('message', function (event) {
     updateFileCount();
     renderNewThumbnails(startIndex);
   } else if (message.type === 'loading') {
+    state.isLoading = message.loading;
     const indicator = document.getElementById('loading-indicator');
     if (indicator) {
       indicator.style.display = message.loading ? 'flex' : 'none';
     }
+    // Update empty state visibility (hide while loading)
+    updateFileCount();
+  } else if (message.type === 'fileData') {
+    handleFileData(message.uri, message.data);
   }
 });
 
@@ -441,10 +444,6 @@ window.addEventListener('beforeunload', function () {
   if (state.cardObserver) {
     state.cardObserver.disconnect();
     state.cardObserver = null;
-  }
-  if (state.fullViewerSectionObserver) {
-    state.fullViewerSectionObserver.disconnect();
-    state.fullViewerSectionObserver = null;
   }
   try { if (state.viewer) state.viewer.plugin.dispose(); } catch (e) { /* ignore */ }
   try { if (state.thumbViewer) state.thumbViewer.plugin.dispose(); } catch (e) { /* ignore */ }

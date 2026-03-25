@@ -231,7 +231,7 @@ export function updateFileCount() {
   const total = state.files.length;
   const emptyState = document.getElementById('empty-state');
   if (emptyState) {
-    emptyState.style.display = total === 0 ? '' : 'none';
+    emptyState.style.display = (total === 0 && !state.isLoading) ? '' : 'none';
   }
   if (total === 0) {
     el.textContent = '';

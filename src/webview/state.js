@@ -26,6 +26,7 @@ export const state = {
   lastClickedIndex: -1,
   isInitialLoad: true,
   pendingSingleFileOpen: false,
+  isLoading: false,
 
   settings: {
     colorTheme: 'default',
@@ -44,7 +45,6 @@ export const state = {
   thumbRenderer: null,
   fullViewerOverlay: null,
   fullViewerIndex: -1,
-  fullViewerSectionObserver: null,
 
   // Undo state (single level)
   undoState: null,
@@ -78,20 +78,19 @@ export const MOLSTAR_CONFIG = {
 export const FULL_VIEWER_CONFIG = {
   layoutIsExpanded: false,
   layoutShowControls: true,
-  layoutShowRemoteState: false,
+  layoutShowRemoteState: true,
   layoutShowSequence: true,
   layoutShowLog: false,
   layoutShowLeftPanel: true,
   collapseLeftPanel: true,
   collapseRightPanel: false,
-  viewportShowExpand: false,
-  viewportShowToggleFullscreen: false,
+  viewportShowExpand: true,
+  viewportShowToggleFullscreen: true,
   viewportShowControls: true,
-  viewportShowSettings: false,
+  viewportShowSettings: true,
   viewportShowSelectionMode: true,
-  viewportShowAnimation: false,
-  volumeStreamingDisabled: true,
-  disabledExtensions: MOLSTAR_CONFIG.disabledExtensions,
+  viewportShowAnimation: true,
+  volumeStreamingDisabled: false,
 };
 
 export function cardId(index) {

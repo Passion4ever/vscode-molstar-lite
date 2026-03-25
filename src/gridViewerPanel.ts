@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { getNonce, FORMAT_MAP, getFileExtension } from './utils';
 
 interface GridFile {
-  data: string;
+  data?: string;
   format: string;
   fileName: string;
   uri: string;
@@ -50,7 +50,7 @@ export class GridViewerPanel {
     this._panel.webview.html = this._getHtmlForWebview();
 
     this._panel.webview.onDidReceiveMessage(
-      (msg) => {
+      async (msg) => {
         if (msg.type === 'ready') {
           this._panel.webview.postMessage({
             type: 'loadFiles',
@@ -58,6 +58,8 @@ export class GridViewerPanel {
           });
         } else if (msg.type === 'open') {
           this._handleOpen();
+        } else if (msg.type === 'requestFileData') {
+          await this._handleRequestFileData(msg.uri);
         }
       },
       null,
@@ -65,6 +67,25 @@ export class GridViewerPanel {
     );
 
     this._panel.onDidDispose(() => this._dispose(), null, this._disposables);
+  }
+
+  private async _handleRequestFileData(uriStr: string) {
+    try {
+      const uri = vscode.Uri.parse(uriStr);
+      const bytes = await vscode.workspace.fs.readFile(uri);
+      const data = Buffer.from(bytes).toString('utf-8');
+      this._panel.webview.postMessage({
+        type: 'fileData',
+        uri: uriStr,
+        data,
+      });
+    } catch {
+      this._panel.webview.postMessage({
+        type: 'fileData',
+        uri: uriStr,
+        data: null,
+      });
+    }
   }
 
   private async _handleOpen() {
@@ -85,8 +106,8 @@ export class GridViewerPanel {
 
     this._panel.webview.postMessage({ type: 'loading', loading: true });
 
-    // Resolve folders to individual files
-    const fileUris: vscode.Uri[] = [];
+    // Resolve folders to individual files, collect metadata only
+    const newFiles: GridFile[] = [];
     for (const u of uris) {
       let stat: vscode.FileStat;
       try { stat = await vscode.workspace.fs.stat(u); } catch { continue; }
@@ -97,15 +118,25 @@ export class GridViewerPanel {
           if (type !== vscode.FileType.File) { continue; }
           const ext = getFileExtension(name);
           if (supportedExts.includes(ext)) {
-            fileUris.push(vscode.Uri.joinPath(u, name));
+            newFiles.push({
+              format: FORMAT_MAP[ext],
+              fileName: name,
+              uri: vscode.Uri.joinPath(u, name).toString(),
+            });
           }
         }
       } else {
-        fileUris.push(u);
+        const ext = getFileExtension(u.fsPath);
+        if (supportedExts.includes(ext)) {
+          newFiles.push({
+            format: FORMAT_MAP[ext],
+            fileName: u.path.split('/').pop() || '',
+            uri: u.toString(),
+          });
+        }
       }
     }
 
-    const newFiles = await this._readUris(fileUris);
     this._panel.webview.postMessage({ type: 'loading', loading: false });
     if (newFiles.length === 0) { return; }
 
@@ -114,28 +145,6 @@ export class GridViewerPanel {
       type: 'addFiles',
       files: newFiles,
     });
-  }
-
-  private async _readUris(uris: vscode.Uri[]): Promise<GridFile[]> {
-    const supportedExts = Object.keys(FORMAT_MAP);
-    const result: GridFile[] = [];
-
-    for (const u of uris) {
-      const ext = getFileExtension(u.fsPath);
-      if (!supportedExts.includes(ext)) { continue; }
-
-      try {
-        const bytes = await vscode.workspace.fs.readFile(u);
-        const data = Buffer.from(bytes).toString('utf-8');
-        const format = FORMAT_MAP[ext];
-        const fileName = u.path.split('/').pop() || '';
-        result.push({ data, format, fileName, uri: u.toString() });
-      } catch {
-        // skip unreadable files
-      }
-    }
-
-    return result;
   }
 
   private _dispose() {
