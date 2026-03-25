@@ -4,6 +4,39 @@ All notable changes to **Molstar Lite** will be documented in this file.
 
 ---
 
+## [1.2.0] - 2026-03-25
+
+> Performance & scalability update — lazy loading, recursive folder support, and major speed improvements for large datasets.
+
+### 📂 New Features
+
+- **Recursive folder opening** — Right-click a folder → "Open Folder Recursively" to scan all subdirectories, with a confirmation dialog showing file/directory counts
+- **Relative path labels** — Cards display relative paths (e.g. `subdir/protein.pdb`) in recursive mode to distinguish same-name files across subdirectories
+
+### ⚡ Performance
+
+- **Lazy file loading** — File contents are no longer read upfront; data is fetched on demand, making folder opening near-instant even for hundreds of files
+- **Thumbnail prefetch** — While rendering one thumbnail, the next 3 files are prefetched in the background to hide I/O latency
+- **Faster render cycle** — Reduced fixed delays in camera reset and render wait, saving ~70 seconds across 400 files
+- **Batch DOM insertion** — Card creation uses `DocumentFragment` for a single DOM operation instead of one per card
+- **Parallel directory scanning** — Sibling subdirectories are scanned concurrently
+- **Debounced re-render** — Rapid toolbar changes coalesce into a single re-render
+- **Memory optimization** — File data is evicted after thumbnail render, reducing heap usage by ~200MB for 400 files
+- **Render timeout** — 5-second timeout prevents a single malformed file from stalling the entire queue
+
+### 🔬 Full Viewer
+
+- **Complete Mol\* restored** — The full viewer now includes all Mol\* features: animation controls, measurements, unit cell, model export, volume streaming, and all previously disabled extensions
+
+### 🐛 Bug Fixes
+
+- Fix "No molecular files" empty state flashing briefly before files appear
+- Fix promise chain bugs where null data would continue into structure loading
+- Remove dead code and unused observer cleanup
+- Deduplicate screenshot capture logic
+
+---
+
 ## [1.1.1] - 2026-03-17
 
 ### Fixed

@@ -5,7 +5,7 @@
 <h1 align="center">Molstar Lite</h1>
 
 <p align="center">
-  <strong>Lite, powerful, and fast</strong> — a 3D molecular structure viewer for VS Code, powered by <a href="https://molstar.org/">Mol*</a>.
+  <strong>Lightweight yet powerful</strong> — a molecular structure toolkit for VS Code, powered by <a href="https://molstar.org/">Mol*</a>.
 </p>
 
 <p align="center">
@@ -16,7 +16,7 @@
 
 ---
 
-Browse, compare, and explore molecular structures directly in VS Code. Open a single file for detailed analysis with full [Mol\*](https://molstar.org/) controls, or open an entire folder to browse dozens of structures in a grid view.
+Browse, compare, and explore molecular structures directly in VS Code. Open a single file for detailed analysis with full [Mol\*](https://molstar.org/) controls, or open an entire folder to browse hundreds of structures in a grid view — folders open instantly, no matter how many files.
 
 ## ✨ Features
 
@@ -56,6 +56,7 @@ Built-in semantic syntax highlighting for molecular file formats. Opens automati
 
 - 👆 **One-click preview** — Click the molecule icon in the editor title bar to instantly visualize a structure
 - 📂 **Open files or folders** — Right-click in Explorer, use the Command Palette, or click the Open button in the viewer
+- 🔄 **Recursive folder scan** — Right-click a folder and choose "Open Folder Recursively" to find all molecular files in subdirectories, with a confirmation dialog before opening
 - 🌐 **Works with VS Code Remote** — Full support for SSH, WSL, and container environments
 
 ## 📋 Supported Formats
@@ -83,15 +84,19 @@ Built-in semantic syntax highlighting for molecular file formats. Opens automati
 1. Install from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Passion4ever.molstar-lite)
 2. Open a molecular file and click the **molecule icon** in the editor title bar
 3. Or right-click a file/folder in the Explorer and select **Molstar Lite: Open**
-4. Or select multiple files in the Explorer, right-click and open them together in grid view
-5. Or press `Cmd+Shift+P` / `Ctrl+Shift+P` and run **Molstar Lite: Open**
+4. Or right-click a folder and select **Molstar Lite: Open Folder Recursively** to scan all subdirectories
+5. Or select multiple files in the Explorer, right-click and open them together in grid view
+6. Or press `Cmd+Shift+P` / `Ctrl+Shift+P` and run **Molstar Lite: Open**
 
 ## 💻 Commands
 
-| Command | Description |
-|---------|-------------|
-| `Molstar Lite: Open` | Open selected files/folders in the viewer |
-| `Molstar Lite: Open to the Side` | Open in a side panel |
+| Command | Context | Description |
+|---------|---------|-------------|
+| `Molstar Lite: Open` | Single file | Open one molecular file in full viewer |
+| `Molstar Lite: Open` | Multiple files | Select multiple files in Explorer → right-click → open all in grid view |
+| `Molstar Lite: Open` | Folder | Open all molecular files in a folder (one level) |
+| `Molstar Lite: Open to the Side` | Single file | Open in a side panel (via editor title bar icon or editor right-click menu) |
+| `Molstar Lite: Open Folder Recursively` | Folder | Recursively scan all subdirectories and open all molecular files found |
 
 Commands are available via the Command Palette, Explorer right-click menu, editor right-click menu, and the editor title bar icon.
 
@@ -118,6 +123,10 @@ Commands are available via the Command Palette, Explorer right-click menu, edito
 | `Ctrl+Z` | Undo last delete |
 | `Ctrl+Click` | Toggle card selection |
 | `Shift+Click` | Range selection |
+
+## 💬 Feedback
+
+Found a bug? Have a feature request? Feel free to [open an issue](https://github.com/Passion4ever/vscode-molstar-lite/issues) on GitHub.
 
 ## 🙏 Acknowledgments
 

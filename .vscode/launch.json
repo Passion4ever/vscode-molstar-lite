@@ -5,7 +5,7 @@
       "name": "Run Extension",
       "type": "extensionHost",
       "request": "launch",
-      "args": ["--extensionDevelopmentPath=${workspaceFolder}", "${workspaceFolder}/examples"],
+      "args": ["--extensionDevelopmentPath=${workspaceFolder}", "${env:HOME}"],
       "outFiles": ["${workspaceFolder}/dist/**/*.js"],
       "preLaunchTask": "npm: build"
     }
