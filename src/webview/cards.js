@@ -46,12 +46,6 @@ export function createSingleCard(file, index, callbacks) {
       }
 
       if (e.shiftKey && state.lastClickedIndex >= 0) {
-        state.selectedCards.forEach(function (si) {
-          const sc = document.getElementById(cardId(si));
-          if (sc) sc.classList.remove('selected');
-        });
-        state.selectedCards.clear();
-
         const lo = Math.min(state.lastClickedIndex, index);
         const hi = Math.max(state.lastClickedIndex, index);
         for (let i = lo; i <= hi; i++) {
