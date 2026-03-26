@@ -4,6 +4,44 @@ All notable changes to **Molstar Lite** will be documented in this file.
 
 ---
 
+## [1.2.1] - 2026-03-26
+
+### 🎨 UI
+
+- **Toolbar redesign** — Cleaner layout with primary Open button, transparent secondary buttons, pill-style S/M/L grid size toggle, SVG search and gear icons
+- **Settings panel** — Color, Repr., Style, Sort, Format moved into a floating panel (gear icon), keeping the main toolbar minimal
+- **Full viewer navigation** — Added prev/next buttons (and arrow key support) in full viewer to switch between files without returning to the grid
+- **Theme compatibility** — Toolbar and buttons now render correctly in both light and dark VS Code themes
+- **Card hover effect** — Subtle shadow and lift on hover for interactive feedback
+- **Loading animation** — Pulse animation on card placeholders while thumbnails render
+- **Empty state** — Added molecule icon to the empty state page
+- **Custom scrollbar** — Thin VS Code-style scrollbar for the grid area
+- **Tab title** — Renamed from "Molstar Viewer" to "Molstar Lite"
+
+### ⚡ Performance
+
+- **Render timeout 5s → 2s** — Complex structures no longer block the thumbnail queue for up to 5 seconds each; partial renders are captured instead of waiting
+- **Batch data eviction** — File data is kept in memory during the entire render cycle and evicted only after all thumbnails complete, eliminating redundant disk reads when changing color/representation settings
+- **Prefetch 3 → 6** — More files are prefetched during thumbnail rendering to hide IPC latency
+- **Larger IntersectionObserver margin** — Cards within 400px of the viewport (up from 200px) begin rendering earlier for smoother scrolling
+
+### 🐛 Bug Fixes
+
+- Fix pLDDT coloring in grid view using wrong color scheme (`uncertainty` → `plddt-confidence`)
+- Fix Shift+Click range selection clearing previously selected cards instead of appending
+- Fix settings panel position not following toolbar on window resize
+- Fix active card border radius mismatch with viewer overlay
+- Fix full viewer prev/next navigation landing on filtered-out (hidden) files
+
+### 🔧 Code Quality
+
+- Extract duplicate snapshot-save logic into shared `saveCurrentSnapshot()` helper
+- Extract `isFileVisible()` to deduplicate filter-matching logic in toolbar
+- Add LRU eviction for full viewer snapshots (max 10) to cap memory usage
+- Replace silent `catch` blocks with `console.warn` for easier debugging
+
+---
+
 ## [1.2.0] - 2026-03-25
 
 > Performance & scalability update — lazy loading, recursive folder support, and major speed improvements for large datasets.
@@ -21,7 +59,6 @@ All notable changes to **Molstar Lite** will be documented in this file.
 - **Batch DOM insertion** — Card creation uses `DocumentFragment` for a single DOM operation instead of one per card
 - **Parallel directory scanning** — Sibling subdirectories are scanned concurrently
 - **Debounced re-render** — Rapid toolbar changes coalesce into a single re-render
-- **Memory optimization** — File data is evicted after thumbnail render, reducing heap usage by ~200MB for 400 files
 - **Render timeout** — 5-second timeout prevents a single malformed file from stalling the entire queue
 
 ### 🔬 Full Viewer
