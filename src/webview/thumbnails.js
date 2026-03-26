@@ -53,6 +53,8 @@ export function processReRenderQueue(gen) {
   if (gen !== state.reRenderGen) return;
   if (state.reRenderQueue.length === 0) {
     state.isReRendering = false;
+    // Batch-evict file data after the entire render cycle completes
+    evictCachedData();
     return;
   }
 
@@ -65,8 +67,8 @@ export function processReRenderQueue(gen) {
     return;
   }
 
-  // Prefetch next files while current one renders
-  const PREFETCH = 3;
+  // Prefetch more files to hide IPC latency
+  const PREFETCH = 6;
   for (let i = 0; i < Math.min(PREFETCH, state.reRenderQueue.length); i++) {
     requestFileData(state.reRenderQueue[i]);
   }
@@ -98,8 +100,6 @@ export function processReRenderQueue(gen) {
     }).then(function () {
       if (gen !== state.reRenderGen) { state.isReRendering = false; return; }
       takeScreenshotFrom(state.thumbRenderer, index);
-      // Evict file data after thumbnail render to free memory
-      file.data = null;
       processReRenderQueue(gen);
     }).catch(function (err) {
       if (gen !== state.reRenderGen) { state.isReRendering = false; return; }
@@ -108,4 +108,8 @@ export function processReRenderQueue(gen) {
       processReRenderQueue(gen);
     });
   });
+}
+
+function evictCachedData() {
+  state.files.forEach(function (f) { f.data = null; });
 }

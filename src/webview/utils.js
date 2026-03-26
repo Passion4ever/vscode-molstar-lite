@@ -64,8 +64,8 @@ export function waitForRender() {
       requestAnimationFrame(function () { setTimeout(resolve, 16); });
     }
 
-    // Timeout to prevent a bad file from stalling the entire queue
-    setTimeout(onReady, 5000);
+    // Shorter timeout — take whatever is rendered so far rather than blocking the queue
+    setTimeout(onReady, 2000);
 
     if (!isBusy.value) {
       onReady();
