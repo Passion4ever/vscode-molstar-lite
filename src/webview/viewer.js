@@ -139,18 +139,42 @@ function loadInFullViewer(index) {
   });
 }
 
-export function closeFullViewer() {
-  if (state.fullViewer && state.fullViewerIndex >= 0) {
-    try {
-      state.fullViewerSnapshots[state.fullViewerIndex] = state.fullViewer.plugin.state.getSnapshot({
-        data: true,
-        camera: true,
-        canvas3d: true,
-        componentManager: true,
-        cameraTransition: 'instant',
-      });
-    } catch (e) { /* ignore */ }
+function saveCurrentSnapshot() {
+  if (!state.fullViewer || state.fullViewerIndex < 0) return;
+  try {
+    state.fullViewerSnapshots[state.fullViewerIndex] = state.fullViewer.plugin.state.getSnapshot({
+      data: true, camera: true, canvas3d: true, componentManager: true, cameraTransition: 'instant',
+    });
+
+    // Evict oldest snapshots to cap memory (keep at most 10)
+    var keys = Object.keys(state.fullViewerSnapshots);
+    while (keys.length > 10) {
+      delete state.fullViewerSnapshots[keys.shift()];
+    }
+  } catch (e) {
+    console.warn('Failed to save viewer snapshot:', e);
   }
+}
+
+export function navigateFullViewer(delta) {
+  if (state.fullViewerIndex < 0) return;
+
+  saveCurrentSnapshot();
+
+  // Find next visible file in the given direction
+  var newIndex = state.fullViewerIndex + delta;
+  while (newIndex >= 0 && newIndex < state.files.length) {
+    var card = document.getElementById(cardId(newIndex));
+    if (card && card.style.display !== 'none') break;
+    newIndex += delta;
+  }
+  if (newIndex < 0 || newIndex >= state.files.length) return;
+
+  openFullViewer(newIndex);
+}
+
+export function closeFullViewer() {
+  saveCurrentSnapshot();
 
   state.fullViewerOverlay.style.display = 'none';
   document.getElementById('grid-toolbar').style.display = '';
