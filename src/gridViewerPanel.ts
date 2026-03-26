@@ -23,7 +23,7 @@ export class GridViewerPanel {
   ): GridViewerPanel {
     const panel = vscode.window.createWebviewPanel(
       GridViewerPanel.viewType,
-      'Molstar Viewer',
+      'Molstar Lite',
       column,
       {
         enableScripts: true,
@@ -180,7 +180,7 @@ export class GridViewerPanel {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="${molstarCssUri}">
   <link rel="stylesheet" href="${gridCssUri}">
-  <title>Molstar Viewer</title>
+  <title>Molstar Lite</title>
 </head>
 <body>
   <script nonce="${nonce}" src="${molstarJsUri}"></script>

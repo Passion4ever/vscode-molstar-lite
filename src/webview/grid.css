@@ -17,10 +17,11 @@ html, body {
 
 /* ── Toolbar ── */
 #grid-toolbar {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 6px 0;
-  padding: 8px 8px;
+  gap: 6px;
+  padding: 6px 10px;
   background: var(--vscode-editor-background);
   border-bottom: 1px solid var(--vscode-panel-border);
   flex-shrink: 0;
@@ -28,22 +29,34 @@ html, body {
 }
 
 #grid-toolbar button {
-  padding: 4px 10px;
-  border: 1px solid var(--vscode-button-border, rgba(255,255,255,0.2));
-  border-radius: 4px;
-  background: var(--vscode-button-secondaryBackground);
-  color: var(--vscode-button-secondaryForeground);
+  padding: 4px 12px;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--vscode-foreground);
   font-size: 12px;
   cursor: pointer;
   font-family: inherit;
+  transition: background 0.1s, color 0.1s;
 }
 #grid-toolbar button:hover {
-  background: var(--vscode-button-secondaryHoverBackground);
+  background: var(--vscode-toolbar-hoverBackground, rgba(128,128,128,0.15));
 }
 #grid-toolbar button.active {
   background: var(--vscode-button-background);
   color: var(--vscode-button-foreground);
   border-color: var(--vscode-button-background);
+}
+
+/* Primary action button */
+#open-btn {
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border-color: var(--vscode-button-background);
+}
+#open-btn:hover {
+  background: var(--vscode-button-hoverBackground);
+  border-color: var(--vscode-button-hoverBackground);
 }
 
 #grid-toolbar label {
@@ -65,6 +78,7 @@ html, body {
   cursor: pointer;
 }
 
+/* ── Search ── */
 .search-wrapper {
   position: relative;
   display: inline-flex;
@@ -72,31 +86,41 @@ html, body {
 }
 
 #grid-search-input {
-  width: 100px;
-  padding: 3px 22px 3px 6px;
-  border: 1px solid var(--vscode-input-border);
-  border-radius: 4px;
+  width: 120px;
+  padding: 4px 22px 4px 26px;
+  border: 1px solid transparent;
+  border-radius: 6px;
   background: var(--vscode-input-background);
   color: var(--vscode-input-foreground);
   font-size: 12px;
   font-family: inherit;
   outline: none;
+  transition: border-color 0.15s, width 0.2s;
 }
 #grid-search-input:focus {
   border-color: var(--vscode-focusBorder);
+  width: 160px;
 }
 #grid-search-input::placeholder {
   color: var(--vscode-input-placeholderForeground);
 }
 
+.search-icon {
+  position: absolute;
+  left: 7px;
+  pointer-events: none;
+  opacity: 0.5;
+}
+
 .search-clear {
   position: absolute;
-  right: 4px;
+  right: 5px;
   cursor: pointer;
   color: var(--vscode-input-foreground);
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1;
-  opacity: 0.6;
+  opacity: 0.4;
+  transition: opacity 0.1s;
 }
 .search-clear:hover {
   opacity: 1;
@@ -107,28 +131,106 @@ html, body {
   cursor: not-allowed;
 }
 
+/* ── File count ── */
 .file-count {
   margin-left: auto;
-  font-size: 12px;
+  font-size: 11px;
   color: var(--vscode-descriptionForeground);
   white-space: nowrap;
+  opacity: 0.8;
 }
 
+/* ── Groups ── */
 .tb-group {
   display: flex;
   align-items: center;
-  gap: 4px 8px;
-  padding: 0 8px;
-  flex-wrap: wrap;
-}
-
-/* Separator line between groups */
-.tb-group + .tb-group {
-  border-left: 1px solid var(--vscode-panel-border);
+  gap: 4px;
+  padding: 0 4px;
 }
 
 .tb-group.size-group {
-  gap: 2px;
+  gap: 1px;
+  background: rgba(128, 128, 128, 0.15);
+  border-radius: 6px;
+  padding: 2px;
+}
+#grid-toolbar .tb-group.size-group button {
+  border: none;
+  border-radius: 5px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* ── Settings gear button ── */
+#settings-btn {
+  padding: 4px 7px;
+  margin-left: 6px;
+  line-height: 1;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Settings floating panel ── */
+#settings-panel {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 200;
+  background: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 8px;
+  width: min(260px, calc(100% - 8px));
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--vscode-panel-border);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--vscode-descriptionForeground);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.settings-body {
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.settings-row label {
+  font-size: 12px;
+  color: var(--vscode-foreground);
+  flex-shrink: 0;
+  min-width: 50px;
+}
+
+.settings-row select {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 8px;
+  border: 1px solid var(--vscode-dropdown-border);
+  border-radius: 4px;
+  background: var(--vscode-dropdown-background);
+  color: var(--vscode-dropdown-foreground);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
 }
 
 /* ── Grid wrapper (scrollable) ── */
@@ -138,19 +240,39 @@ html, body {
   position: relative;
 }
 
+/* Thin scrollbar matching VS Code style */
+#grid-wrapper::-webkit-scrollbar {
+  width: 8px;
+}
+#grid-wrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+#grid-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(128, 128, 128, 0.3);
+  border-radius: 4px;
+}
+#grid-wrapper::-webkit-scrollbar-thumb:hover {
+  background: rgba(128, 128, 128, 0.5);
+}
+
 /* ── Empty state ── */
 #empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 48px 24px;
+  gap: 12px;
+  padding: 64px 24px;
   text-align: center;
 }
 
+.empty-icon {
+  opacity: 0.15;
+  margin-bottom: 4px;
+}
+
 .empty-title {
-  font-size: 14px;
+  font-size: 15px;
   color: var(--vscode-foreground);
   font-weight: 500;
 }
@@ -158,7 +280,7 @@ html, body {
 .empty-hint {
   font-size: 12px;
   color: var(--vscode-descriptionForeground);
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 /* ── Loading indicator ── */
@@ -185,21 +307,23 @@ html, body {
 /* ── Grid cards ── */
 .grid-card {
   border: 1px solid var(--vscode-panel-border);
-  border-radius: 6px;
+  border-radius: 8px;
   overflow: hidden;
   cursor: pointer;
   background: var(--vscode-editor-background);
-  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
 }
 
 .grid-card:hover {
   border-color: var(--vscode-focusBorder);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  transform: translateY(-1px);
 }
 
 .grid-card.active {
   border-color: var(--vscode-focusBorder);
-  box-shadow: 0 0 0 2px var(--vscode-focusBorder), 0 0 16px rgba(0, 127, 212, 0.45);
-  transform: scale(1.03);
+  box-shadow: 0 0 0 1px var(--vscode-focusBorder), 0 4px 12px rgba(0, 0, 0, 0.2);
+  transform: translateY(-1px);
   z-index: 2;
 }
 
@@ -207,7 +331,7 @@ html, body {
   position: relative;
   width: 100%;
   aspect-ratio: 1;
-  background: #1a1a2e;
+  background: var(--vscode-editor-background);
   overflow: hidden;
 }
 
@@ -248,25 +372,33 @@ html, body {
 }
 
 .grid-card .label {
-  padding: 4px 8px;
+  padding: 6px 10px;
   font-size: 11px;
-  color: var(--vscode-foreground);
+  color: var(--vscode-descriptionForeground);
   text-align: center;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  border-top: 1px solid var(--vscode-panel-border);
 }
 
-/* Loading placeholder */
+/* Loading placeholder with pulse animation */
 .card-img-area.loading {
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--vscode-descriptionForeground);
-  font-size: 12px;
+  font-size: 11px;
+  animation: pulse 1.5s ease-in-out infinite;
 }
 .card-img-area.loading::after {
   content: 'Loading...';
+  opacity: 0.5;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 .fail-label {
@@ -283,7 +415,7 @@ html, body {
 #viewer-overlay {
   position: absolute;
   z-index: 50;
-  border-radius: 6px 6px 0 0;
+  border-radius: 8px 8px 0 0;
   overflow: hidden;
 }
 
@@ -378,22 +510,51 @@ html, body {
 
 #back-to-grid-btn {
   padding: 4px 10px;
-  border: 1px solid var(--vscode-button-border, rgba(255,255,255,0.2));
-  border-radius: 4px;
-  background: var(--vscode-button-secondaryBackground);
-  color: var(--vscode-button-secondaryForeground);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--vscode-foreground);
   font-size: 12px;
   cursor: pointer;
   font-family: inherit;
+  transition: background 0.1s;
 }
 #back-to-grid-btn:hover {
-  background: var(--vscode-button-secondaryHoverBackground);
+  background: var(--vscode-toolbar-hoverBackground, rgba(128,128,128,0.15));
 }
 
 #full-viewer-title {
   font-size: 13px;
   color: var(--vscode-foreground);
   font-weight: 500;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#full-viewer-nav {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+#full-viewer-nav button {
+  padding: 4px 6px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.1s;
+  opacity: 0.7;
+}
+#full-viewer-nav button:hover {
+  background: var(--vscode-toolbar-hoverBackground, rgba(128,128,128,0.15));
+  opacity: 1;
 }
 
 #full-viewer {
@@ -499,5 +660,5 @@ html, body {
   cursor: not-allowed;
 }
 #delete-btn:disabled:hover {
-  background: var(--vscode-button-secondaryBackground);
+  background: transparent;
 }

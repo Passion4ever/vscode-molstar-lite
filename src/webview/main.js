@@ -3,7 +3,7 @@ import { hideAxes, applyCurrentColorTheme } from './molstar-utils.js';
 import { createToolbar, updateFileCount, populateFormatFilter, applySortAndFilter } from './toolbar.js';
 import { createCards, createCardsFromIndex, renderNewThumbnails, toggleSelectMode, deleteSelectedCards, undoDelete, updateDeleteButton } from './cards.js';
 import { initThumbViewer, reRenderAllThumbnails, processReRenderQueue } from './thumbnails.js';
-import { activateCard, deactivateCard, positionViewerOnCard, loadStructureInViewer, openFullViewer, closeFullViewer } from './viewer.js';
+import { activateCard, deactivateCard, positionViewerOnCard, loadStructureInViewer, openFullViewer, closeFullViewer, navigateFullViewer } from './viewer.js';
 import { handleFileData } from './data-loader.js';
 
 // ────────────────── Callback objects ──────────────────
@@ -73,7 +73,8 @@ function init() {
   // Empty state (shown when no files are loaded)
   const emptyState = document.createElement('div');
   emptyState.id = 'empty-state';
-  emptyState.innerHTML = '<div class="empty-title">No molecular files</div>'
+  emptyState.innerHTML = '<div class="empty-icon"><svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="19" cy="18" r="2"/><line x1="7" y1="7" x2="10" y2="10"/><line x1="14" y1="10" x2="17" y2="7"/><line x1="7" y1="17" x2="10" y2="14"/><line x1="14" y1="14" x2="17" y2="17"/></svg></div>'
+    + '<div class="empty-title">No molecular files</div>'
     + '<div class="empty-hint">Click <strong>Open</strong> to load files, or right-click files in the Explorer.</div>'
     + '<div class="empty-hint">Supported formats: PDB, CIF, SDF, MOL, MOL2, XYZ, GRO, PQR, PDBQT</div>';
   state.gridWrapper.appendChild(emptyState);
@@ -174,6 +175,23 @@ function init() {
   const fullTitle = document.createElement('span');
   fullTitle.id = 'full-viewer-title';
   fullTopBar.appendChild(fullTitle);
+
+  const navGroup = document.createElement('div');
+  navGroup.id = 'full-viewer-nav';
+  const prevBtn = document.createElement('button');
+  prevBtn.id = 'prev-file-btn';
+  prevBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>';
+  prevBtn.title = 'Previous file';
+  prevBtn.addEventListener('click', function () { navigateFullViewer(-1); });
+  navGroup.appendChild(prevBtn);
+  const nextBtn = document.createElement('button');
+  nextBtn.id = 'next-file-btn';
+  nextBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+  nextBtn.title = 'Next file';
+  nextBtn.addEventListener('click', function () { navigateFullViewer(1); });
+  navGroup.appendChild(nextBtn);
+  fullTopBar.appendChild(navGroup);
+
   state.fullViewerOverlay.appendChild(fullTopBar);
 
   const fullViewerDiv = document.createElement('div');
@@ -250,9 +268,15 @@ function init() {
       return;
     }
 
-    // Arrow keys -> navigate between cards
+    // Arrow keys -> navigate
     if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].indexOf(e.key) === -1) return;
-    if (state.fullViewerIndex >= 0) return; // don't navigate in full viewer
+
+    // In full viewer: left/right to switch files
+    if (state.fullViewerIndex >= 0) {
+      if (e.key === 'ArrowLeft') { e.preventDefault(); navigateFullViewer(-1); }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); navigateFullViewer(1); }
+      return;
+    }
     if (state.selectMode) return; // don't navigate in select mode
     if (state.files.length === 0) return;
     e.preventDefault();
@@ -314,7 +338,7 @@ function init() {
     });
   }, {
     root: state.gridWrapper,
-    rootMargin: '200px',
+    rootMargin: '400px',
   });
 }
 
