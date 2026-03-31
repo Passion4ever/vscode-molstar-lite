@@ -4,6 +4,15 @@ All notable changes to **Molstar Lite** will be documented in this file.
 
 ---
 
+## [1.2.2] - 2026-03-31
+
+### 🐛 Bug Fixes
+
+- Fix clicking a card during thumbnail rendering showing the previous structure instead of the selected one — use closure-captured data instead of `file.data` which can be nulled by batch eviction
+- Adjust `waitForRender` timeout from 2s to 3s to give large proteins enough time to render while still keeping the queue fast
+
+---
+
 ## [1.2.1] - 2026-03-26
 
 ### 🎨 UI

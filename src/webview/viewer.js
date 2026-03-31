@@ -74,7 +74,7 @@ export function loadStructureInViewer(index) {
     if (!data || state.activeCardIndex !== index) return;
     state.viewer.plugin.clear().then(function () {
       if (state.activeCardIndex !== index) return;
-      return state.viewer.loadStructureFromData(file.data, file.format, false, {
+      return state.viewer.loadStructureFromData(data, file.format, false, {
         dataLabel: file.fileName,
       });
     }).then(function () {
@@ -130,7 +130,7 @@ function loadInFullViewer(index) {
     if (!data || state.fullViewerIndex !== index) return;
     state.fullViewer.plugin.clear().then(function () {
       if (state.fullViewerIndex !== index) return;
-      return state.fullViewer.loadStructureFromData(file.data, file.format, false, {
+      return state.fullViewer.loadStructureFromData(data, file.format, false, {
         dataLabel: file.fileName,
       });
     }).catch(function (err) {

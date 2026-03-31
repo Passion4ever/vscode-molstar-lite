@@ -82,7 +82,7 @@ export function processReRenderQueue(gen) {
     }
     state.thumbViewer.plugin.clear().then(function () {
       if (gen !== state.reRenderGen) return;
-      return state.thumbViewer.loadStructureFromData(file.data, file.format, false, {
+      return state.thumbViewer.loadStructureFromData(data, file.format, false, {
         dataLabel: file.fileName,
       });
     }).then(function () {
