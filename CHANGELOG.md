@@ -4,6 +4,19 @@ All notable changes to **Molstar Lite** will be documented in this file.
 
 ---
 
+## [1.2.3] - 2026-04-20
+
+### 🐛 Bug Fixes
+
+- Fix clicking a card briefly showing the previously active molecule before the new structure loads — clear the viewer synchronously on activation instead of waiting for the new file data to arrive
+- Surface file read failures: show a VS Code error notification with the filename and reason, mark the card as **Failed**, and close the viewer/full viewer instead of leaving them stuck on the loading animation
+
+### 🔧 Code Quality
+
+- Replace repeated `activeCardIndex !== index` stale-callback guards with per-call generation counters in both the active-card and full-viewer load pipelines, making out-of-order async callbacks easier to reason about
+
+---
+
 ## [1.2.2] - 2026-03-31
 
 ### 🐛 Bug Fixes
