@@ -79,7 +79,10 @@ export class GridViewerPanel {
         uri: uriStr,
         data,
       });
-    } catch {
+    } catch (err) {
+      const fileName = uriStr.split('/').pop() || uriStr;
+      const reason = err instanceof Error ? err.message : String(err);
+      vscode.window.showErrorMessage(`Molstar Lite: failed to load ${fileName} — ${reason}`);
       this._panel.webview.postMessage({
         type: 'fileData',
         uri: uriStr,

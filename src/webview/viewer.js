@@ -1,7 +1,10 @@
 import { state, cardId, MOLSTAR_CONFIG, FULL_VIEWER_CONFIG } from './state.js';
 import { hideAxes, applyCurrentColorTheme, applyCanvasStyle, applyRepresentationTypeTo } from './molstar-utils.js';
-import { takeScreenshotFrom } from './utils.js';
+import { takeScreenshotFrom, markCardFailed } from './utils.js';
 import { requestFileData } from './data-loader.js';
+
+let viewerLoadGen = 0;
+let fullViewerLoadGen = 0;
 
 // ────────────────── Interactive viewer (card overlay) ──────────────────
 
@@ -63,30 +66,43 @@ export function positionViewerOnCard(index) {
   }
 }
 
+function abortActiveViewer(index) {
+  markCardFailed(index);
+  const card = document.getElementById(cardId(index));
+  if (card) card.classList.remove('active');
+  state.viewerOverlay.style.display = 'none';
+  if (state.activeCardIndex === index) state.activeCardIndex = -1;
+}
+
 export function loadStructureInViewer(index) {
   if (!state.viewer) return;
   const file = state.files[index];
   if (!file) return;
 
   applyCanvasStyle(state.viewer);
+  const clearPromise = state.viewer.plugin.clear();
+  const gen = ++viewerLoadGen;
+  const stale = function () { return gen !== viewerLoadGen || state.activeCardIndex !== index; };
 
   requestFileData(index).then(function (data) {
-    if (!data || state.activeCardIndex !== index) return;
-    state.viewer.plugin.clear().then(function () {
-      if (state.activeCardIndex !== index) return;
+    if (stale()) return;
+    if (!data) { abortActiveViewer(index); return; }
+    clearPromise.then(function () {
+      if (stale()) return;
       return state.viewer.loadStructureFromData(data, file.format, false, {
         dataLabel: file.fileName,
       });
     }).then(function () {
-      if (state.activeCardIndex !== index) return;
+      if (stale()) return;
       if (state.settings.displayMode !== 'default') {
         return applyRepresentationTypeTo(state.viewer, state.settings.displayMode);
       }
     }).then(function () {
-      if (state.activeCardIndex !== index) return;
+      if (stale()) return;
       applyCurrentColorTheme(state.viewer);
     }).catch(function (err) {
       console.warn('Failed to load structure:', err);
+      if (!stale()) abortActiveViewer(index);
     });
   });
 }
@@ -123,18 +139,32 @@ export function openFullViewer(index) {
   }
 }
 
+function abortFullViewer(index) {
+  markCardFailed(index);
+  state.fullViewerOverlay.style.display = 'none';
+  const toolbar = document.getElementById('grid-toolbar');
+  if (toolbar) toolbar.style.display = '';
+  state.gridWrapper.style.display = '';
+  if (state.fullViewerIndex === index) state.fullViewerIndex = -1;
+}
+
 function loadInFullViewer(index) {
   const file = state.files[index];
   if (!file) return;
+  const gen = ++fullViewerLoadGen;
+  const stale = function () { return gen !== fullViewerLoadGen || state.fullViewerIndex !== index; };
+
   requestFileData(index).then(function (data) {
-    if (!data || state.fullViewerIndex !== index) return;
+    if (stale()) return;
+    if (!data) { abortFullViewer(index); return; }
     state.fullViewer.plugin.clear().then(function () {
-      if (state.fullViewerIndex !== index) return;
+      if (stale()) return;
       return state.fullViewer.loadStructureFromData(data, file.format, false, {
         dataLabel: file.fileName,
       });
     }).catch(function (err) {
       console.warn('Failed to load in full viewer:', err);
+      if (!stale()) abortFullViewer(index);
     });
   });
 }
