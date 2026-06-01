@@ -1,10 +1,15 @@
 import { state, cardId, MOLSTAR_CONFIG, FULL_VIEWER_CONFIG } from './state.js';
-import { hideAxes, applyCurrentColorTheme, applyCanvasStyle, applyRepresentationTypeTo } from './molstar-utils.js';
-import { takeScreenshotFrom, markCardFailed } from './utils.js';
+import { hideAxes, applyCurrentColorTheme, applyCanvasStyle, applyRepresentationTypeTo, resetCameraOf } from './molstar-utils.js';
+import { markCardFailed, waitForRender } from './utils.js';
 import { requestFileData } from './data-loader.js';
 
 let viewerLoadGen = 0;
 let fullViewerLoadGen = 0;
+
+// Serializes all mutations of the single shared card viewer so a previous
+// card's in-flight load can't interleave with the next card's clear+load
+// (which would leave the previous structure rendered under the new card).
+let viewerLoadChain = Promise.resolve();
 
 // ────────────────── Interactive viewer (card overlay) ──────────────────
 
@@ -19,6 +24,9 @@ export function activateCard(index) {
   card.classList.add('active');
 
   positionViewerOnCard(index);
+  // Keep the live canvas hidden (the card's thumbnail shows through) until the
+  // structure has actually rendered — avoids the blank white-canvas flash.
+  state.viewerOverlay.style.opacity = '0';
   state.viewerOverlay.style.display = 'block';
 
   if (!state.viewer) {
@@ -37,8 +45,10 @@ export function activateCard(index) {
 export function deactivateCard() {
   if (state.activeCardIndex < 0) return;
 
-  takeScreenshotFrom(state.viewerOverlay, state.activeCardIndex);
-
+  // Note: we intentionally do NOT screenshot the live viewer here. The card's
+  // thumbnail is owned by thumbViewer (always the default front view); grabbing
+  // the interactive viewer's (possibly rotated) frame would make the thumbnail
+  // jump to a different angle when leaving a card.
   const card = document.getElementById(cardId(state.activeCardIndex));
   if (card) card.classList.remove('active');
 
@@ -79,31 +89,49 @@ export function loadStructureInViewer(index) {
   const file = state.files[index];
   if (!file) return;
 
-  applyCanvasStyle(state.viewer);
-  const clearPromise = state.viewer.plugin.clear();
+  // Hide the canvas during clear+load so the blank canvas never shows.
+  state.viewerOverlay.style.opacity = '0';
   const gen = ++viewerLoadGen;
   const stale = function () { return gen !== viewerLoadGen || state.activeCardIndex !== index; };
 
-  requestFileData(index).then(function (data) {
-    if (stale()) return;
-    if (!data) { abortActiveViewer(index); return; }
-    clearPromise.then(function () {
-      if (stale()) return;
+  // Kick off the IPC fetch eagerly so it runs in parallel with any in-flight load.
+  const dataPromise = requestFileData(index);
+
+  // Append to the serial chain so this card's clear+load can't interleave with
+  // a previous card's still-running load on the shared viewer.
+  viewerLoadChain = viewerLoadChain.then(function () {
+    if (stale() || !state.viewer) return;
+    applyCanvasStyle(state.viewer);
+    return state.viewer.plugin.clear().then(function () {
+      return dataPromise;
+    }).then(function (data) {
+      if (stale() || !state.viewer) return;
+      if (!data) { abortActiveViewer(index); return; }
       return state.viewer.loadStructureFromData(data, file.format, false, {
         dataLabel: file.fileName,
       });
     }).then(function () {
-      if (stale()) return;
+      if (stale() || !state.viewer) return;
       if (state.settings.displayMode !== 'default') {
         return applyRepresentationTypeTo(state.viewer, state.settings.displayMode);
       }
     }).then(function () {
-      if (stale()) return;
+      if (stale() || !state.viewer) return;
       applyCurrentColorTheme(state.viewer);
-    }).catch(function (err) {
-      console.warn('Failed to load structure:', err);
-      if (!stale()) abortActiveViewer(index);
+      // Reset to the initial fit view so the activated angle matches the
+      // thumbnail (which is also rendered at the reset camera) — no jump.
+      return resetCameraOf(state.viewer);
+    }).then(function () {
+      if (stale() || !state.viewer) return;
+      return waitForRender(state.viewer);
+    }).then(function () {
+      if (stale()) return;
+      // First frame is painted — reveal the live viewer in place of the thumbnail.
+      state.viewerOverlay.style.opacity = '1';
     });
+  }).catch(function (err) {
+    console.warn('Failed to load structure:', err);
+    if (!stale()) abortActiveViewer(index);
   });
 }
 

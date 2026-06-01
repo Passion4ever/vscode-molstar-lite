@@ -5,8 +5,11 @@ export const state = {
 
   // Mol* viewer instances
   viewer: null,
-  thumbViewer: null,
   fullViewer: null,
+
+  // Parallel offscreen thumbnail renderers — each entry: { viewer, container, busy }
+  thumbWorkers: [],
+  activeWorkers: 0,
 
   activeCardIndex: -1,
   screenshots: {},
@@ -15,7 +18,6 @@ export const state = {
   // Background re-render state
   reRenderQueue: [],
   reRenderGen: 0,
-  isReRendering: false,
   needsRender: new Set(),
   visibleCards: new Set(),
   cardObserver: null,
@@ -42,7 +44,6 @@ export const state = {
   gridWrapper: null,
   gridContainer: null,
   viewerOverlay: null,
-  thumbRenderer: null,
   fullViewerOverlay: null,
   fullViewerIndex: -1,
 
@@ -50,6 +51,10 @@ export const state = {
   undoState: null,
   undoTimer: null,
 };
+
+// Number of parallel offscreen thumbnail renderers. 2 captures most of the
+// speedup (the main thread is the bottleneck); more gives diminishing returns.
+export const THUMB_WORKER_COUNT = 2;
 
 export const MOLSTAR_CONFIG = {
   layoutIsExpanded: false,
@@ -84,8 +89,11 @@ export const FULL_VIEWER_CONFIG = {
   layoutShowLeftPanel: true,
   collapseLeftPanel: true,
   collapseRightPanel: false,
-  viewportShowExpand: true,
-  viewportShowToggleFullscreen: true,
+  // Both hidden: the Expand button's hover exposes a browser-Fullscreen button
+  // that VS Code's sandboxed webview iframe blocks (it does nothing), and Mol*
+  // ties the two together. The in-panel full viewer already fills the panel.
+  viewportShowExpand: false,
+  viewportShowToggleFullscreen: false,
   viewportShowControls: true,
   viewportShowSettings: true,
   viewportShowSelectionMode: true,

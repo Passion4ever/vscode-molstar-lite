@@ -53,9 +53,9 @@ export function blankPixel() {
   return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
 }
 
-export function waitForRender() {
+export function waitForRender(viewer) {
   return new Promise(function (resolve) {
-    const isBusy = state.thumbViewer.plugin.behaviors.state.isBusy;
+    const isBusy = viewer.plugin.behaviors.state.isBusy;
     let settled = false;
 
     function onReady() {

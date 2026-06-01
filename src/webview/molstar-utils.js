@@ -104,10 +104,22 @@ export function applyRepresentationTypeTo(v, typeName) {
 
 export function resetCameraOf(v) {
   if (!v || !v.plugin.canvas3d) return Promise.resolve();
+  const canvas3d = v.plugin.canvas3d;
   try {
-    v.plugin.canvas3d.requestCameraReset({ durationMs: 0 });
+    // A plain camera reset reuses the current view direction (getFocus only
+    // re-centers/zooms), so a viewer that was dragged keeps its rotation and
+    // ends up mismatching its static thumbnail. Restore the default orientation
+    // first (Mol*'s default camera snapshot), then re-fit — this keeps the
+    // activated view aligned with the thumbnail every time. setState with
+    // durationMs 0 applies instantly (no transition), before the reset runs.
+    canvas3d.camera.setState({
+      position: [0, 0, 100],
+      up: [0, 1, 0],
+      target: [0, 0, 0],
+    }, 0);
+    canvas3d.requestCameraReset({ durationMs: 0 });
   } catch (e) {
-    try { v.plugin.canvas3d.requestCameraReset(); } catch (e2) { /* ignore */ }
+    try { canvas3d.requestCameraReset(); } catch (e2) { /* ignore */ }
   }
   return new Promise(function (resolve) {
     requestAnimationFrame(function () { setTimeout(resolve, 50); });

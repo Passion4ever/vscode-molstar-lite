@@ -1,8 +1,8 @@
-import { state, vscode, cardId, MOLSTAR_CONFIG } from './state.js';
+import { state, vscode, cardId, MOLSTAR_CONFIG, THUMB_WORKER_COUNT } from './state.js';
 import { hideAxes, applyCurrentColorTheme } from './molstar-utils.js';
 import { createToolbar, updateFileCount, populateFormatFilter, applySortAndFilter } from './toolbar.js';
 import { createCards, createCardsFromIndex, renderNewThumbnails, toggleSelectMode, deleteSelectedCards, undoDelete, updateDeleteButton } from './cards.js';
-import { initThumbViewer, reRenderAllThumbnails, processReRenderQueue } from './thumbnails.js';
+import { initThumbViewer, reRenderAllThumbnails, nudgeThumbnails } from './thumbnails.js';
 import { activateCard, deactivateCard, positionViewerOnCard, loadStructureInViewer, openFullViewer, closeFullViewer, navigateFullViewer } from './viewer.js';
 import { handleFileData } from './data-loader.js';
 
@@ -124,6 +124,7 @@ function init() {
     e.stopPropagation();
     if (state.activeCardIndex < 0 || !state.viewer) return;
     const index = state.activeCardIndex;
+    state.viewerOverlay.style.opacity = '0';
     try { state.viewer.plugin.dispose(); } catch (e) { /* ignore */ }
     state.viewer = null;
     const container = document.getElementById('active-viewer');
@@ -200,15 +201,19 @@ function init() {
 
   document.body.appendChild(state.fullViewerOverlay);
 
-  // Offscreen thumbnail renderer
-  state.thumbRenderer = document.createElement('div');
-  state.thumbRenderer.id = 'thumb-renderer';
-  const thumbDiv = document.createElement('div');
-  thumbDiv.id = 'thumb-viewer';
-  thumbDiv.style.width = '300px';
-  thumbDiv.style.height = '300px';
-  state.thumbRenderer.appendChild(thumbDiv);
-  document.body.appendChild(state.thumbRenderer);
+  // Offscreen thumbnail renderers (one viewer div per parallel worker).
+  // The outer #thumb-renderer keeps the existing CSS (offscreen position +
+  // hiding Mol* chrome via descendant selectors), so no CSS change is needed.
+  const thumbRenderer = document.createElement('div');
+  thumbRenderer.id = 'thumb-renderer';
+  for (let i = 0; i < THUMB_WORKER_COUNT; i++) {
+    const thumbDiv = document.createElement('div');
+    thumbDiv.id = 'thumb-viewer-' + i;
+    thumbDiv.style.width = '300px';
+    thumbDiv.style.height = '300px';
+    thumbRenderer.appendChild(thumbDiv);
+  }
+  document.body.appendChild(thumbRenderer);
 
   // Click on empty space -> deactivate active card
   state.gridWrapper.addEventListener('click', function (e) {
@@ -328,9 +333,7 @@ function init() {
         if (state.needsRender.has(idx)) {
           state.needsRender.delete(idx);
           state.reRenderQueue.push(idx);
-          if (state.thumbViewer && !state.isReRendering) {
-            processReRenderQueue(state.reRenderGen);
-          }
+          nudgeThumbnails();
         }
       } else {
         state.visibleCards.delete(idx);
@@ -470,10 +473,12 @@ window.addEventListener('beforeunload', function () {
     state.cardObserver = null;
   }
   try { if (state.viewer) state.viewer.plugin.dispose(); } catch (e) { /* ignore */ }
-  try { if (state.thumbViewer) state.thumbViewer.plugin.dispose(); } catch (e) { /* ignore */ }
+  state.thumbWorkers.forEach(function (w) {
+    try { w.viewer.plugin.dispose(); } catch (e) { /* ignore */ }
+  });
   try { if (state.fullViewer) state.fullViewer.plugin.dispose(); } catch (e) { /* ignore */ }
   state.viewer = null;
-  state.thumbViewer = null;
+  state.thumbWorkers = [];
   state.fullViewer = null;
 });
 
