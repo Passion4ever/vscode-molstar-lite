@@ -4,6 +4,27 @@ All notable changes to **Molstar Lite** will be documented in this file.
 
 ---
 
+## [1.2.4] - 2026-06-01
+
+> Grid viewer experience & rendering speed pass.
+
+### ⚡ Performance
+
+- **Parallel thumbnail rendering** — Thumbnails now render across 2 offscreen viewers concurrently instead of a single serial queue, overlapping each molecule's idle waits (camera reset / render settle) with the next molecule's parsing. Measured ~1.9× faster on small-molecule grids, with no change to image quality. Tunable via the `THUMB_WORKER_COUNT` constant (2 is the sweet spot — the JS main thread is the bottleneck, so more workers give diminishing returns)
+
+### 🐛 Bug Fixes
+
+- Fix the interactive viewer flashing a blank white canvas when activating a card — the live canvas now stays hidden (showing the card's thumbnail) until the structure's first frame is rendered, then reveals in place
+- Fix rapidly clicking between cards leaving the previous molecule rendered under the newly activated card — all loads on the shared viewer are now serialized so a previous in-flight load can't interleave with the next card's clear + load
+- Fix an activated molecule inheriting the last drag angle instead of matching its thumbnail — the camera orientation is now reset to default on load (Mol\*'s camera reset only re-centers/zooms; it keeps the current rotation)
+- Fix a card's thumbnail visibly jumping to a different angle when leaving it — stop overwriting the thumbnail with the (possibly rotated) live viewer frame on deactivation; thumbnails are owned solely by the thumbnail renderer
+
+### 🎨 UI
+
+- Remove the non-functional Fullscreen/Expand button from the in-panel full viewer — the browser Fullscreen API is blocked inside VS Code's sandboxed webview iframe, so the button did nothing
+
+---
+
 ## [1.2.3] - 2026-04-20
 
 ### 🐛 Bug Fixes
