@@ -11,6 +11,11 @@ interface GridFile {
 export class GridViewerPanel {
   public static readonly viewType = 'molViewer.gridView';
 
+  // Single reused panel: each panel holds up to 4 WebGL contexts (2 thumbnail
+  // workers + card viewer + full viewer), and Chromium caps contexts per page
+  // process — multiple live panels would force-lose contexts (black canvas).
+  private static _current: GridViewerPanel | undefined;
+
   private readonly _panel: vscode.WebviewPanel;
   private readonly _extensionUri: vscode.Uri;
   private _files: GridFile[];
@@ -21,6 +26,13 @@ export class GridViewerPanel {
     files: GridFile[],
     column: vscode.ViewColumn = vscode.ViewColumn.Active
   ): GridViewerPanel {
+    if (GridViewerPanel._current) {
+      const existing = GridViewerPanel._current;
+      existing._panel.reveal();
+      existing._addFiles(files);
+      return existing;
+    }
+
     const panel = vscode.window.createWebviewPanel(
       GridViewerPanel.viewType,
       'Molstar Lite',
@@ -35,7 +47,19 @@ export class GridViewerPanel {
       }
     );
 
-    return new GridViewerPanel(panel, extensionUri, files);
+    GridViewerPanel._current = new GridViewerPanel(panel, extensionUri, files);
+    return GridViewerPanel._current;
+  }
+
+  private _addFiles(files: GridFile[]) {
+    const existing = new Set(this._files.map((f) => f.uri));
+    const newFiles = files.filter((f) => !existing.has(f.uri));
+    if (newFiles.length === 0) { return; }
+    this._files.push(...newFiles);
+    this._panel.webview.postMessage({
+      type: 'addFiles',
+      files: newFiles,
+    });
   }
 
   private constructor(
@@ -60,6 +84,10 @@ export class GridViewerPanel {
           this._handleOpen();
         } else if (msg.type === 'requestFileData') {
           await this._handleRequestFileData(msg.uri);
+        } else if (msg.type === 'syncFiles') {
+          // Webview-side deletions/undo: mirror its file list so _addFiles
+          // dedup doesn't treat deleted files as still present.
+          this._files = msg.files;
         }
       },
       null,
@@ -69,9 +97,27 @@ export class GridViewerPanel {
     this._panel.onDidDispose(() => this._dispose(), null, this._disposables);
   }
 
+  // Reading an entire file into a string and posting it to the webview; very
+  // large files (e.g. MD trajectories) would freeze or OOM the extension host.
+  private static readonly MAX_FILE_SIZE = 50 * 1024 * 1024;
+
   private async _handleRequestFileData(uriStr: string) {
     try {
       const uri = vscode.Uri.parse(uriStr);
+      const stat = await vscode.workspace.fs.stat(uri);
+      if (stat.size > GridViewerPanel.MAX_FILE_SIZE) {
+        const fileName = uriStr.split('/').pop() || uriStr;
+        const sizeMb = (stat.size / 1024 / 1024).toFixed(1);
+        vscode.window.showWarningMessage(
+          `Molstar Lite: ${fileName} is too large to display (${sizeMb} MB, limit 50 MB).`
+        );
+        this._panel.webview.postMessage({
+          type: 'fileData',
+          uri: uriStr,
+          data: null,
+        });
+        return;
+      }
       const bytes = await vscode.workspace.fs.readFile(uri);
       const data = Buffer.from(bytes).toString('utf-8');
       this._panel.webview.postMessage({
@@ -143,14 +189,13 @@ export class GridViewerPanel {
     this._panel.webview.postMessage({ type: 'loading', loading: false });
     if (newFiles.length === 0) { return; }
 
-    this._files.push(...newFiles);
-    this._panel.webview.postMessage({
-      type: 'addFiles',
-      files: newFiles,
-    });
+    this._addFiles(newFiles);
   }
 
   private _dispose() {
+    if (GridViewerPanel._current === this) {
+      GridViewerPanel._current = undefined;
+    }
     this._panel.dispose();
     while (this._disposables.length) {
       const d = this._disposables.pop();
