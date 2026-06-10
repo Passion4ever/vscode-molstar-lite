@@ -1,4 +1,4 @@
-import { state, cardId } from './state.js';
+import { state, vscode, cardId } from './state.js';
 import { revokeScreenshot, updateCardImage } from './utils.js';
 import { updateFileCount, populateFormatFilter } from './toolbar.js';
 
@@ -196,11 +196,12 @@ export function deleteSelectedCards(callbacks) {
   state.fullViewerSnapshots = newSnapshots;
   state.selectedCards.clear();
 
-  // Exit select mode after delete
+  // Exit select mode after delete. Go through toggleSelectMode so the
+  // appearance selects disabled on entering select mode get re-enabled.
   state.selectMode = false;
-  state.lastClickedIndex = -1;
   const selectBtn = document.getElementById('select-btn');
   if (selectBtn) selectBtn.classList.remove('active');
+  toggleSelectMode(false, callbacks);
 
   // Unobserve old cards before clearing DOM
   if (state.cardObserver) {
@@ -221,6 +222,20 @@ export function deleteSelectedCards(callbacks) {
   if (callbacks.onDeleted) {
     callbacks.onDeleted(deletedSet.size);
   }
+
+  syncFilesToHost();
+}
+
+// Keep the extension host's file list in sync after webview-side deletions, so
+// its add-files dedup doesn't treat deleted files as still present. Metadata
+// only — never send the (potentially large) cached .data.
+function syncFilesToHost() {
+  vscode.postMessage({
+    type: 'syncFiles',
+    files: state.files.map(function (f) {
+      return { format: f.format, fileName: f.fileName, uri: f.uri };
+    }),
+  });
 }
 
 export function undoDelete() {
@@ -246,14 +261,27 @@ export function undoDelete() {
   rebuildCards(undo.cardCallbacks, undo.screenshots);
   populateFormatFilter();
   updateFileCount();
+
+  syncFilesToHost();
 }
 
 function rebuildCards(cardCallbacks, screenshotsToRestore) {
+  // Invalidate any in-flight thumbnail pass: queued indices refer to the old
+  // files array, and a worker mid-render must not commit its screenshot under
+  // the new index mapping.
+  state.reRenderGen++;
+  state.reRenderQueue = [];
+
   state.gridContainer.innerHTML = '';
   if (state.files.length > 0) {
     createCards(state.files, cardCallbacks);
     for (const idx in screenshotsToRestore) {
       updateCardImage(Number(idx), screenshotsToRestore[idx]);
+    }
+    // Cards without a restored screenshot would stay "loading" forever; mark
+    // them so the IntersectionObserver queues them as they become visible.
+    for (let i = 0; i < state.files.length; i++) {
+      if (!screenshotsToRestore[i]) state.needsRender.add(i);
     }
   }
 }
