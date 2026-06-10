@@ -4,6 +4,28 @@ All notable changes to **Molstar Lite** will be documented in this file.
 
 ---
 
+## [1.3.0] - 2026-06-11
+
+> Stability hardening pass.
+
+### ✨ Features
+
+- **Single reused grid panel** — Running an open command while a grid panel already exists now reveals it and appends the new files (deduplicated by URI) instead of creating another panel. Each panel holds up to 4 WebGL contexts (2 thumbnail workers + card viewer + full viewer) and Chromium caps contexts per page process, so multiple live panels could force-lose contexts and black out a viewer
+
+### 🐛 Bug Fixes
+
+- Add a 10s timeout to file-data requests — a lost extension-host reply no longer permanently stalls a thumbnail worker or leaves a card stuck on the loading animation; the card is marked **Failed** and can retry on the next render pass
+- Invalidate the in-flight thumbnail queue when cards are deleted or restored — a render pass running during deletion could commit screenshots under the remapped indices (wrong image on the wrong card), and cards without a screenshot stayed on the loading animation forever
+- Re-enable the appearance selects (Color / Repr. / Style) after deleting cards — exiting select mode via Delete left them permanently disabled until select mode was toggled again
+- Sync webview-side deletions back to the extension host — re-adding a folder after deleting some of its molecules now restores the deleted ones instead of silently dropping them as duplicates
+- Skip files larger than 50 MB with a warning instead of reading them whole into memory, which could freeze or OOM the extension host on MD trajectory outputs
+
+### ⚡ Performance
+
+- Thumbnail screenshots are now encoded as WebP (quality 0.8) instead of PNG — faster encoding and a fraction of the memory per cached thumbnail
+
+---
+
 ## [1.2.4] - 2026-06-01
 
 > Grid viewer experience & rendering speed pass.
