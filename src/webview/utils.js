@@ -10,7 +10,7 @@ export function takeScreenshotFrom(container, index) {
       const url = URL.createObjectURL(blob);
       state.screenshots[index] = url;
       updateCardImage(index, url);
-    }, 'image/png');
+    }, 'image/webp', 0.8);
   } catch (e) { /* ignore */ }
 }
 
