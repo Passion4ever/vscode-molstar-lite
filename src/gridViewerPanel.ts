@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as crypto from 'crypto';
 import { getNonce, FORMAT_MAP, getFileExtension } from './utils';
 
 interface GridFile {
@@ -18,13 +19,15 @@ export class GridViewerPanel {
 
   private readonly _panel: vscode.WebviewPanel;
   private readonly _extensionUri: vscode.Uri;
+  private readonly _storageUri: vscode.Uri | undefined;
   private _files: GridFile[];
   private _disposables: vscode.Disposable[] = [];
 
   public static create(
     extensionUri: vscode.Uri,
     files: GridFile[],
-    column: vscode.ViewColumn = vscode.ViewColumn.Active
+    column: vscode.ViewColumn = vscode.ViewColumn.Active,
+    storageUri?: vscode.Uri
   ): GridViewerPanel {
     if (GridViewerPanel._current) {
       const existing = GridViewerPanel._current;
@@ -47,7 +50,7 @@ export class GridViewerPanel {
       }
     );
 
-    GridViewerPanel._current = new GridViewerPanel(panel, extensionUri, files);
+    GridViewerPanel._current = new GridViewerPanel(panel, extensionUri, files, storageUri);
     return GridViewerPanel._current;
   }
 
@@ -65,11 +68,14 @@ export class GridViewerPanel {
   private constructor(
     panel: vscode.WebviewPanel,
     extensionUri: vscode.Uri,
-    files: GridFile[]
+    files: GridFile[],
+    storageUri?: vscode.Uri
   ) {
     this._panel = panel;
     this._extensionUri = extensionUri;
+    this._storageUri = storageUri;
     this._files = files;
+    void this._pruneThumbCache();
 
     this._panel.webview.html = this._getHtmlForWebview();
 
@@ -84,6 +90,10 @@ export class GridViewerPanel {
           this._handleOpen();
         } else if (msg.type === 'requestFileData') {
           await this._handleRequestFileData(msg.uri);
+        } else if (msg.type === 'requestThumb') {
+          await this._handleRequestThumb(msg.uri, msg.appearance);
+        } else if (msg.type === 'storeThumb') {
+          await this._handleStoreThumb(msg.uri, msg.appearance, msg.dataUrl);
         } else if (msg.type === 'syncFiles') {
           // Webview-side deletions/undo: mirror its file list so _addFiles
           // dedup doesn't treat deleted files as still present.
@@ -113,6 +123,86 @@ export class GridViewerPanel {
       GridViewerPanel._bench.show(true);
     }
     return GridViewerPanel._bench;
+  }
+
+  // ── Thumbnail disk cache ──
+  // Rendering a thumbnail costs ~125ms of main-thread work; reopening a folder
+  // re-renders everything from scratch. Cache the WebP screenshots on disk,
+  // keyed by source file (uri + mtime) and appearance settings, so unchanged
+  // molecules load instantly on later opens.
+
+  private static readonly THUMB_CACHE_MAX = 1000;
+
+  private _thumbCacheDir(): vscode.Uri | undefined {
+    return this._storageUri
+      ? vscode.Uri.joinPath(this._storageUri, 'thumbs')
+      : undefined;
+  }
+
+  private _thumbCacheFile(uriStr: string, mtime: number, appearance: string): vscode.Uri | undefined {
+    const dir = this._thumbCacheDir();
+    if (!dir) { return undefined; }
+    const key = crypto
+      .createHash('sha1')
+      .update(`${uriStr}|${mtime}|${appearance}`)
+      .digest('hex');
+    return vscode.Uri.joinPath(dir, `${key}.webp`);
+  }
+
+  private async _handleRequestThumb(uriStr: string, appearance: string) {
+    let dataUrl: string | null = null;
+    try {
+      const stat = await vscode.workspace.fs.stat(vscode.Uri.parse(uriStr));
+      const file = this._thumbCacheFile(uriStr, stat.mtime, appearance);
+      if (file) {
+        const bytes = await vscode.workspace.fs.readFile(file);
+        dataUrl = 'data:image/webp;base64,' + Buffer.from(bytes).toString('base64');
+      }
+    } catch {
+      // Cache miss (or unreadable source file) — webview renders normally.
+    }
+    this._panel.webview.postMessage({
+      type: 'thumbData',
+      uri: uriStr,
+      appearance,
+      dataUrl,
+    });
+  }
+
+  private async _handleStoreThumb(uriStr: string, appearance: string, dataUrl: string) {
+    try {
+      const base64 = String(dataUrl).split(',')[1];
+      if (!base64) { return; }
+      const stat = await vscode.workspace.fs.stat(vscode.Uri.parse(uriStr));
+      const file = this._thumbCacheFile(uriStr, stat.mtime, appearance);
+      if (!file) { return; }
+      const dir = this._thumbCacheDir()!;
+      await vscode.workspace.fs.createDirectory(dir);
+      await vscode.workspace.fs.writeFile(file, Buffer.from(base64, 'base64'));
+    } catch {
+      // Best effort — a failed write just means a re-render next time.
+    }
+  }
+
+  private async _pruneThumbCache() {
+    const dir = this._thumbCacheDir();
+    if (!dir) { return; }
+    try {
+      const entries = await vscode.workspace.fs.readDirectory(dir);
+      if (entries.length <= GridViewerPanel.THUMB_CACHE_MAX) { return; }
+      const stats = await Promise.all(
+        entries.map(async ([name]) => {
+          const file = vscode.Uri.joinPath(dir, name);
+          const stat = await vscode.workspace.fs.stat(file);
+          return { file, mtime: stat.mtime };
+        })
+      );
+      stats.sort((a, b) => a.mtime - b.mtime);
+      const excess = stats.slice(0, stats.length - GridViewerPanel.THUMB_CACHE_MAX);
+      await Promise.all(excess.map((e) => vscode.workspace.fs.delete(e.file)));
+    } catch {
+      // Cache dir may not exist yet.
+    }
   }
 
   // Reading an entire file into a string and posting it to the webview; very

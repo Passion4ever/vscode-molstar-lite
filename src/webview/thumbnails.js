@@ -1,7 +1,7 @@
 import { state, vscode, MOLSTAR_CONFIG, THUMB_WORKER_COUNT } from './state.js';
 import { hideAxes, applyCurrentColorTheme, applyCanvasStyle, applyRepresentationTypeTo, resetCameraOf } from './molstar-utils.js';
-import { takeScreenshotFrom, markCardFailed, waitForRender } from './utils.js';
-import { requestFileData } from './data-loader.js';
+import { takeScreenshotFrom, updateCardImage, revokeScreenshot, markCardFailed, waitForRender } from './utils.js';
+import { requestFileData, requestThumb, clearThumbResults } from './data-loader.js';
 
 export function initThumbViewer(onReady) {
   const creates = [];
@@ -38,6 +38,7 @@ function doReRenderAllThumbnails() {
   reRenderTimer = null;
   state.reRenderGen++;
   state.needsRender.clear();
+  clearThumbResults();
 
   const visibleQueue = [];
   state.files.forEach(function (_, i) {
@@ -98,54 +99,90 @@ function pumpWorker(worker) {
   const file = state.files[index];
   if (!file) { pumpWorker(worker); return; }
 
-  // Prefetch upcoming files to hide IPC latency.
+  const appearance = currentAppearance();
+
+  // Prefetch upcoming items to hide IPC latency: cache lookup first, file
+  // data only on a miss (a cache hit never needs the file contents).
   const PREFETCH = 6;
   for (let i = 0; i < Math.min(PREFETCH, state.reRenderQueue.length); i++) {
-    requestFileData(state.reRenderQueue[i]);
+    prefetchItem(state.reRenderQueue[i], appearance);
   }
 
   const v = worker.viewer;
   const stale = function () { return gen !== state.reRenderGen; };
 
-  requestFileData(index).then(function (data) {
-    if (!data) { markCardFailed(index); pumpWorker(worker); return; }
-    v.plugin.clear().then(function () {
-      return v.loadStructureFromData(data, file.format, false, {
-        dataLabel: file.fileName,
-      });
-    }).then(function () {
-      if (state.settings.displayMode !== 'default') {
-        return applyRepresentationTypeTo(v, state.settings.displayMode);
-      }
-    }).then(function () {
-      applyCurrentColorTheme(v);
-      return resetCameraOf(v);
-    }).then(function () {
-      return waitForRender(v);
-    }).then(function () {
-      // Only commit the screenshot if the settings (gen) haven't changed under
-      // us; otherwise this render used stale settings — drop it and let the new
-      // pass re-render this index.
+  requestThumb(index, appearance).then(function (cached) {
+    if (cached) {
       if (!stale()) {
-        takeScreenshotFrom(worker.container, index);
-        if (state.bench && state.bench.gen === gen) {
-          state.bench.count++;
-          if (!state.bench.first) {
-            state.bench.first = performance.now() - state.bench.start;
-          }
-        }
+        revokeScreenshot(index);
+        state.screenshots[index] = cached;
+        updateCardImage(index, cached);
+        benchTick(gen);
       }
       pumpWorker(worker);
-    }).catch(function (err) {
-      console.warn('Failed to render thumbnail for', file.fileName, err);
-      if (!stale()) markCardFailed(index);
-      pumpWorker(worker);
+      return;
+    }
+    requestFileData(index).then(function (data) {
+      if (!data) { markCardFailed(index); pumpWorker(worker); return; }
+      v.plugin.clear().then(function () {
+        return v.loadStructureFromData(data, file.format, false, {
+          dataLabel: file.fileName,
+        });
+      }).then(function () {
+        if (state.settings.displayMode !== 'default') {
+          return applyRepresentationTypeTo(v, state.settings.displayMode);
+        }
+      }).then(function () {
+        applyCurrentColorTheme(v);
+        return resetCameraOf(v);
+      }).then(function () {
+        return waitForRender(v);
+      }).then(function () {
+        // Only commit the screenshot if the settings (gen) haven't changed under
+        // us; otherwise this render used stale settings — drop it and let the new
+        // pass re-render this index.
+        if (!stale()) {
+          takeScreenshotFrom(worker.container, index, {
+            uri: file.uri,
+            appearance: appearance,
+          });
+          benchTick(gen);
+        }
+        pumpWorker(worker);
+      }).catch(function (err) {
+        console.warn('Failed to render thumbnail for', file.fileName, err);
+        if (!stale()) markCardFailed(index);
+        pumpWorker(worker);
+      });
     });
   });
 }
 
+// The disk-cache key includes every setting that changes how a thumbnail
+// looks; switching a setting back to a previously rendered combination is a
+// cache hit.
+function currentAppearance() {
+  return state.settings.colorTheme + '|' + state.settings.displayMode + '|' + state.settings.style;
+}
+
+function prefetchItem(index, appearance) {
+  requestThumb(index, appearance).then(function (cached) {
+    if (!cached) requestFileData(index);
+  });
+}
+
+function benchTick(gen) {
+  if (state.bench && state.bench.gen === gen) {
+    state.bench.count++;
+    if (!state.bench.first) {
+      state.bench.first = performance.now() - state.bench.start;
+    }
+  }
+}
+
 function evictCachedData() {
   state.files.forEach(function (f) { f.data = null; });
+  clearThumbResults();
 }
 
 // Report the completed pass's timing to the extension host (logged to the

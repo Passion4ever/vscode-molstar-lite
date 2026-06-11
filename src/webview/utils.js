@@ -1,6 +1,11 @@
-import { state, cardId } from './state.js';
+import { state, cardId, vscode } from './state.js';
 
-export function takeScreenshotFrom(container, index) {
+// cacheInfo ({ uri, appearance }, optional): also persist the screenshot to
+// the extension-side disk cache. The uri is captured by the caller because
+// the toBlob callback is async — by the time it fires, a card deletion may
+// have shifted indices, and a lookup via state.files[index] could associate
+// the image with the wrong file.
+export function takeScreenshotFrom(container, index, cacheInfo) {
   const canvas = container.querySelector('canvas');
   if (!canvas) return;
   try {
@@ -10,6 +15,18 @@ export function takeScreenshotFrom(container, index) {
       const url = URL.createObjectURL(blob);
       state.screenshots[index] = url;
       updateCardImage(index, url);
+      if (cacheInfo) {
+        const reader = new FileReader();
+        reader.onload = function () {
+          vscode.postMessage({
+            type: 'storeThumb',
+            uri: cacheInfo.uri,
+            appearance: cacheInfo.appearance,
+            dataUrl: reader.result,
+          });
+        };
+        reader.readAsDataURL(blob);
+      }
     }, 'image/webp', 0.8);
   } catch (e) { /* ignore */ }
 }

@@ -4,7 +4,7 @@ import { createToolbar, updateFileCount, populateFormatFilter, applySortAndFilte
 import { createCards, createCardsFromIndex, renderNewThumbnails, toggleSelectMode, deleteSelectedCards, undoDelete, updateDeleteButton } from './cards.js';
 import { initThumbViewer, reRenderAllThumbnails, nudgeThumbnails } from './thumbnails.js';
 import { activateCard, deactivateCard, positionViewerOnCard, loadStructureInViewer, openFullViewer, closeFullViewer, navigateFullViewer } from './viewer.js';
-import { handleFileData } from './data-loader.js';
+import { handleFileData, handleThumbData } from './data-loader.js';
 
 // ────────────────── Callback objects ──────────────────
 
@@ -452,6 +452,8 @@ window.addEventListener('message', function (event) {
     updateFileCount();
   } else if (message.type === 'fileData') {
     handleFileData(message.uri, message.data);
+  } else if (message.type === 'thumbData') {
+    handleThumbData(message.uri, message.appearance, message.dataUrl);
   }
 });
 

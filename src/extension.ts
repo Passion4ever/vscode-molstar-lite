@@ -40,7 +40,7 @@ async function openViewer(
     inputUris = [vscode.window.activeTextEditor.document.uri];
   } else {
     // No file context — open empty viewer, user can add files via Open button
-    GridViewerPanel.create(context.extensionUri, [], column);
+    GridViewerPanel.create(context.extensionUri, [], column, context.globalStorageUri);
     return;
   }
 
@@ -110,7 +110,7 @@ async function openViewer(
     uri: f.uri.toString(),
   }));
 
-  GridViewerPanel.create(context.extensionUri, fileMeta, column);
+  GridViewerPanel.create(context.extensionUri, fileMeta, column, context.globalStorageUri);
 }
 
 export function deactivate() {}
