@@ -108,6 +108,9 @@ export class GridViewerPanel {
       GridViewerPanel._bench = vscode.window.createOutputChannel(
         'Molstar Lite Benchmark'
       );
+      // The channel doesn't exist in the Output dropdown until first use;
+      // reveal it (without stealing focus) so results are discoverable.
+      GridViewerPanel._bench.show(true);
     }
     return GridViewerPanel._bench;
   }
