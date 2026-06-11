@@ -18,6 +18,8 @@ export const state = {
   // Background re-render state
   reRenderQueue: [],
   reRenderGen: 0,
+  // Per-pass benchmark timing: { gen, start, first, count } or null
+  bench: null,
   needsRender: new Set(),
   visibleCards: new Set(),
   cardObserver: null,

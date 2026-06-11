@@ -88,6 +88,10 @@ export class GridViewerPanel {
           // Webview-side deletions/undo: mirror its file list so _addFiles
           // dedup doesn't treat deleted files as still present.
           this._files = msg.files;
+        } else if (msg.type === 'benchmark') {
+          GridViewerPanel._benchChannel().appendLine(
+            `${new Date().toISOString()} ${msg.text}`
+          );
         }
       },
       null,
@@ -95,6 +99,17 @@ export class GridViewerPanel {
     );
 
     this._panel.onDidDispose(() => this._dispose(), null, this._disposables);
+  }
+
+  private static _bench: vscode.OutputChannel | undefined;
+
+  private static _benchChannel(): vscode.OutputChannel {
+    if (!GridViewerPanel._bench) {
+      GridViewerPanel._bench = vscode.window.createOutputChannel(
+        'Molstar Lite Benchmark'
+      );
+    }
+    return GridViewerPanel._bench;
   }
 
   // Reading an entire file into a string and posting it to the webview; very

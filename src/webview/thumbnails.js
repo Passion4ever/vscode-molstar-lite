@@ -1,4 +1,4 @@
-import { state, MOLSTAR_CONFIG, THUMB_WORKER_COUNT } from './state.js';
+import { state, vscode, MOLSTAR_CONFIG, THUMB_WORKER_COUNT } from './state.js';
 import { hideAxes, applyCurrentColorTheme, applyCanvasStyle, applyRepresentationTypeTo, resetCameraOf } from './molstar-utils.js';
 import { takeScreenshotFrom, markCardFailed, waitForRender } from './utils.js';
 import { requestFileData } from './data-loader.js';
@@ -48,6 +48,9 @@ function doReRenderAllThumbnails() {
     }
   });
   state.reRenderQueue = visibleQueue;
+  state.bench = visibleQueue.length > 0
+    ? { gen: state.reRenderGen, start: performance.now(), first: 0, count: 0 }
+    : null;
 
   if (state.thumbWorkers.length > 0) {
     state.thumbWorkers.forEach(function (w) { applyCanvasStyle(w.viewer); });
@@ -84,6 +87,7 @@ function pumpWorker(worker) {
     state.activeWorkers--;
     if (state.activeWorkers <= 0) {
       state.activeWorkers = 0;
+      reportBench();
       // Batch-evict file data after the whole pass completes.
       evictCachedData();
     }
@@ -124,6 +128,12 @@ function pumpWorker(worker) {
       // pass re-render this index.
       if (!stale()) {
         takeScreenshotFrom(worker.container, index);
+        if (state.bench && state.bench.gen === gen) {
+          state.bench.count++;
+          if (!state.bench.first) {
+            state.bench.first = performance.now() - state.bench.start;
+          }
+        }
       }
       pumpWorker(worker);
     }).catch(function (err) {
@@ -136,4 +146,18 @@ function pumpWorker(worker) {
 
 function evictCachedData() {
   state.files.forEach(function (f) { f.data = null; });
+}
+
+// Report the completed pass's timing to the extension host (logged to the
+// "Molstar Lite Benchmark" output channel) so optimizations can be measured
+// against a fixed test set. Dropped if the settings changed mid-pass.
+function reportBench() {
+  const b = state.bench;
+  state.bench = null;
+  if (!b || b.gen !== state.reRenderGen || b.count === 0) return;
+  const total = Math.round(performance.now() - b.start);
+  vscode.postMessage({
+    type: 'benchmark',
+    text: 'thumbnails=' + b.count + ' first=' + Math.round(b.first) + 'ms total=' + total + 'ms',
+  });
 }
