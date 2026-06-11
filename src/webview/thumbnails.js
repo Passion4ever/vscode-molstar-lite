@@ -133,7 +133,8 @@ function pumpWorker(worker) {
           return applyRepresentationTypeTo(v, state.settings.displayMode);
         }
       }).then(function () {
-        applyCurrentColorTheme(v);
+        return applyCurrentColorTheme(v);
+      }).then(function () {
         return resetCameraOf(v);
       }).then(function () {
         return waitForRender(v);

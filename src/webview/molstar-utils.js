@@ -9,15 +9,23 @@ export function hideAxes(v) {
   } catch (e) { /* ignore */ }
 }
 
+// Returns a promise that settles when every structure's theme update is
+// applied. Awaiting it (instead of fire-and-forget) keeps the plugin's isBusy
+// flag reliable for the event-driven waitForRender — otherwise the screenshot
+// could be captured before the recolor lands.
 export function applyCurrentColorTheme(v) {
-  if (!v) return;
+  if (!v) return Promise.resolve();
   const theme = state.settings.colorTheme;
   const structures = v.plugin.managers.structure.hierarchy.current.structures;
+  const tasks = [];
   structures.forEach(function (s) {
-    v.plugin.managers.structure.component.updateRepresentationsTheme(
-      s.components, { color: theme }
-    );
+    tasks.push(Promise.resolve(
+      v.plugin.managers.structure.component.updateRepresentationsTheme(
+        s.components, { color: theme }
+      )
+    ));
   });
+  return Promise.all(tasks);
 }
 
 export function applyCanvasStyle(v) {
@@ -121,7 +129,7 @@ export function resetCameraOf(v) {
   } catch (e) {
     try { canvas3d.requestCameraReset(); } catch (e2) { /* ignore */ }
   }
-  return new Promise(function (resolve) {
-    requestAnimationFrame(function () { setTimeout(resolve, 50); });
-  });
+  // The reset (durationMs 0) applies on the next render tick; the following
+  // waitForRender waits for that genuine draw, so no fixed settle delay here.
+  return Promise.resolve();
 }

@@ -117,7 +117,9 @@ export function loadStructureInViewer(index) {
       }
     }).then(function () {
       if (stale() || !state.viewer) return;
-      applyCurrentColorTheme(state.viewer);
+      return applyCurrentColorTheme(state.viewer);
+    }).then(function () {
+      if (stale() || !state.viewer) return;
       // Reset to the initial fit view so the activated angle matches the
       // thumbnail (which is also rendered at the reset camera) — no jump.
       return resetCameraOf(state.viewer);

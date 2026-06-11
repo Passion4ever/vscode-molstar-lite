@@ -70,30 +70,65 @@ export function blankPixel() {
   return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
 }
 
+// Resolve when the canvas paints a frame *after* this call — the real "the
+// render is on screen" signal, replacing a fixed-duration guess. didDraw is a
+// BehaviorSubject, so it replays the most recent (stale) draw synchronously on
+// subscribe; skip that first value and resolve on the next genuine draw. Falls
+// back on a timeout so a viewer that never redraws can't stall the queue.
+export function waitForNextDraw(canvas3d, timeoutMs) {
+  return new Promise(function (resolve) {
+    let done = false;
+    let primed = false;
+    function finish() {
+      if (done) return;
+      done = true;
+      try { sub.unsubscribe(); } catch (e) { /* ignore */ }
+      clearTimeout(timer);
+      resolve();
+    }
+    const timer = setTimeout(finish, timeoutMs);
+    const sub = canvas3d.didDraw.subscribe(function () {
+      if (!primed) { primed = true; return; }
+      finish();
+    });
+  });
+}
+
+// Wait until the structure is both fully computed (state no longer busy) and
+// actually painted to the canvas. Previously this waited a fixed rAF + 16ms
+// after the state settled, which for small molecules was longer than the real
+// render; now it waits for the genuine post-commit draw event instead.
 export function waitForRender(viewer) {
   return new Promise(function (resolve) {
-    const isBusy = viewer.plugin.behaviors.state.isBusy;
-    let settled = false;
-
-    function onReady() {
-      if (settled) return;
-      settled = true;
-      requestAnimationFrame(function () { setTimeout(resolve, 16); });
+    const plugin = viewer.plugin;
+    const isBusy = plugin.behaviors.state.isBusy;
+    let done = false;
+    function finish() {
+      if (done) return;
+      done = true;
+      clearTimeout(hard);
+      resolve();
     }
 
-    // Timeout to prevent a bad file from stalling the entire queue
-    setTimeout(onReady, 3000);
+    // Overall safety cap so a malformed file can't stall the queue.
+    const hard = setTimeout(finish, 3000);
+
+    let busySub = null;
+    function afterStateSettled() {
+      if (done) return;
+      if (busySub) { busySub.unsubscribe(); busySub = null; }
+      const canvas3d = plugin.canvas3d;
+      if (!canvas3d) { finish(); return; }
+      waitForNextDraw(canvas3d, 1500).then(finish);
+    }
 
     if (!isBusy.value) {
-      onReady();
+      afterStateSettled();
       return;
     }
 
-    const sub = isBusy.subscribe(function (busy) {
-      if (!busy) {
-        sub.unsubscribe();
-        onReady();
-      }
+    busySub = isBusy.subscribe(function (busy) {
+      if (!busy) afterStateSettled();
     });
   });
 }
