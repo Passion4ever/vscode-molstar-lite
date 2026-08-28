@@ -2,7 +2,7 @@
   "name": "molstar-lite",
   "displayName": "Molstar Lite",
   "description": "Lightweight molecular structure toolkit for VS Code — 3D viewer, grid browser, and syntax highlighting",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "publisher": "Passion4ever",
   "license": "MIT",
   "pricing": "Free",
@@ -231,6 +231,11 @@
             "metal": { "type": "string", "description": "FE, ZN, MG, CA, etc." },
             "other": { "type": "string", "description": "Other elements" }
           }
+        },
+        "molstarLite.benchmark.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Log thumbnail render pass timing to the \"Molstar Lite Benchmark\" output channel (development tool)"
         }
       }
     }

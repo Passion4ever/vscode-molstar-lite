@@ -4,6 +4,21 @@ All notable changes to **Molstar Lite** will be documented in this file.
 
 ---
 
+## [1.4.0] - 2026-08-28
+
+> Thumbnail rendering speed pass.
+
+### ⚡ Performance
+
+- **Thumbnail disk cache** — Rendered thumbnails are now persisted to the extension's global storage and reused on later opens, keyed by source file (URI + mtime) and appearance settings. Reopening a folder no longer re-renders anything that hasn't changed, and switching a color theme / representation back to a previously rendered combination is a cache hit too. Measured **~1.5ms per thumbnail on a warm cache vs ~125ms before (80–100×)**, with the first thumbnail appearing in ~8ms instead of ~305ms. A cache hit skips reading the file contents entirely, so the parse and IPC cost disappear along with the render. The cache holds up to 1000 thumbnails, evicting the oldest first, and falls back to a normal render if a lookup takes longer than 3s
+- **Event-driven render completion** — Thumbnail capture now waits for the canvas's real `didDraw` event instead of fixed `requestAnimationFrame` + delay guesses (50ms after the camera reset, 16ms after the render). For small molecules those fixed waits were longer than the actual render. Measured **~40ms per thumbnail vs ~117ms before (~3×)** on a cold cache, with no change to image quality, camera angle, or coloring
+
+### ✨ Features
+
+- New `molstarLite.benchmark.enabled` setting (off by default) — logs each thumbnail render pass (count / first / total) to a "Molstar Lite Benchmark" output channel, for measuring rendering changes against a fixed test set
+
+---
+
 ## [1.3.0] - 2026-06-11
 
 > Stability hardening pass.

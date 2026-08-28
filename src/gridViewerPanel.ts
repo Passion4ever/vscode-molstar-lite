@@ -99,9 +99,7 @@ export class GridViewerPanel {
           // dedup doesn't treat deleted files as still present.
           this._files = msg.files;
         } else if (msg.type === 'benchmark') {
-          GridViewerPanel._benchChannel().appendLine(
-            `${new Date().toISOString()} ${msg.text}`
-          );
+          GridViewerPanel._logBenchmark(msg.text);
         }
       },
       null,
@@ -111,9 +109,18 @@ export class GridViewerPanel {
     this._panel.onDidDispose(() => this._dispose(), null, this._disposables);
   }
 
+  // ── Benchmark logging ──
+  // Off by default: a development tool for measuring thumbnail render passes
+  // against a fixed test set. Enable molstarLite.benchmark.enabled to have
+  // each pass logged to the "Molstar Lite Benchmark" output channel.
+
   private static _bench: vscode.OutputChannel | undefined;
 
-  private static _benchChannel(): vscode.OutputChannel {
+  private static _logBenchmark(text: string) {
+    const enabled = vscode.workspace
+      .getConfiguration('molstarLite.benchmark')
+      .get('enabled', false);
+    if (!enabled) { return; }
     if (!GridViewerPanel._bench) {
       GridViewerPanel._bench = vscode.window.createOutputChannel(
         'Molstar Lite Benchmark'
@@ -122,7 +129,7 @@ export class GridViewerPanel {
       // reveal it (without stealing focus) so results are discoverable.
       GridViewerPanel._bench.show(true);
     }
-    return GridViewerPanel._bench;
+    GridViewerPanel._bench.appendLine(`${new Date().toISOString()} ${text}`);
   }
 
   // ── Thumbnail disk cache ──

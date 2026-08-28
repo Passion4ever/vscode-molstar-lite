@@ -107,6 +107,7 @@ Commands are available via the Command Palette, Explorer right-click menu, edito
 | `molstarLite.highlight.enabled` | `true` | Enable/disable syntax highlighting |
 | `molstarLite.highlight.residueColors` | *(see below)* | Colors for amino acid groups |
 | `molstarLite.highlight.elementColors` | *(see below)* | CPK colors for elements |
+| `molstarLite.benchmark.enabled` | `false` | Log thumbnail render pass timing to an output channel |
 
 **Residue color groups:** hydrophobic, polar, positive, negative, special, water, dna, rna, ligand
 
