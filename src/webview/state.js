@@ -59,6 +59,13 @@ export const state = {
 export const THUMB_WORKER_COUNT = 2;
 
 export const MOLSTAR_CONFIG = {
+  // Mol* defaults to refusing a WebGL context that would be software-rendered
+  // (failIfMajorPerformanceCaveat). Users on GPU-less compute servers / VMs
+  // (VS Code on a Windows server + Remote SSH is a common setup) only have
+  // SwiftShader, so without this they get "WebGL does not seem to be
+  // available" instead of a (slower) working viewer. No effect where a GPU
+  // exists.
+  allowMajorPerformanceCaveat: true,
   layoutIsExpanded: false,
   layoutShowControls: false,
   layoutShowRemoteState: false,
@@ -83,6 +90,7 @@ export const MOLSTAR_CONFIG = {
 };
 
 export const FULL_VIEWER_CONFIG = {
+  allowMajorPerformanceCaveat: true, // see MOLSTAR_CONFIG
   layoutIsExpanded: false,
   layoutShowControls: true,
   layoutShowRemoteState: true,
