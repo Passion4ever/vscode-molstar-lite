@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as crypto from 'crypto';
+import * as fs from 'fs';
 import { getNonce, FORMAT_MAP, getFileExtension } from './utils';
 
 interface GridFile {
@@ -33,6 +34,7 @@ export class GridViewerPanel {
       const existing = GridViewerPanel._current;
       existing._panel.reveal();
       existing._addFiles(files);
+      void existing._pruneThumbCache();
       return existing;
     }
 
@@ -164,6 +166,12 @@ export class GridViewerPanel {
       if (file) {
         const bytes = await vscode.workspace.fs.readFile(file);
         dataUrl = 'data:image/webp;base64,' + Buffer.from(bytes).toString('base64');
+        // Touch on hit so _pruneThumbCache's mtime ordering is least-recently
+        // *used*, not least-recently *written*. Node fs is fine here: global
+        // storage always lives on the extension host's own disk (under Remote
+        // the extension runs on the remote side, and so does this path).
+        const now = new Date();
+        fs.promises.utimes(file.fsPath, now, now).catch(() => { /* best effort */ });
       }
     } catch {
       // Cache miss (or unreadable source file) — webview renders normally.
