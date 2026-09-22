@@ -4,6 +4,22 @@ All notable changes to **Molstar Lite** will be documented in this file.
 
 ---
 
+## [1.4.1] - 2026-09-23
+
+> Software-rendering support & maintenance.
+
+### 🐛 Bug Fixes
+
+- **Work on machines without a GPU** — Mol\* by default refuses a WebGL context that would be software-rendered, so on GPU-less compute servers and VMs (e.g. VS Code on a Windows server with Remote SSH) every viewer showed "WebGL does not seem to be available". The viewers now accept software rendering (SwiftShader): slower for large structures, but working. No change on machines with a GPU, integrated or discrete
+- Thumbnail cache eviction is now least-recently-*used* — a cache hit refreshes the entry's timestamp, so frequently opened folders are no longer evicted before rarely opened ones just because they were rendered earlier. The cache is also pruned when an existing grid panel is reused, not only on panel creation
+
+### 🔧 Maintenance
+
+- Pin `@vscode/vsce` as a dev dependency (`^3.6`) so local packaging and CI publishing use the same locked version instead of floating to whatever `npx` resolves
+- Move the release workflow to the Node 24 action runtime (`actions/checkout@v5`, `actions/setup-node@v5`, `softprops/action-gh-release@v3`) and build with Node 22
+
+---
+
 ## [1.4.0] - 2026-08-28
 
 > Thumbnail rendering speed pass.
